@@ -1,0 +1,63 @@
+.footer {
+  background: var(--color-primary);
+  color: #CBD5E1;
+  padding: var(--space-12) 0 var(--space-6);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+  margin-bottom: var(--space-10);
+}
+
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .grid { grid-template-columns: 2fr 1fr 1fr 1.5fr; } }
+
+.brand { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.logo { display: flex; align-items: center; gap: var(--space-3); }
+
+.logoMark {
+  width: 40px; height: 40px;
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 700; color: #fff; font-size: 14px;
+}
+
+.logoMain { font-family: var(--font-heading); font-weight: 700; color: #fff; font-size: 16px; }
+.logoSub { font-size: 11px; color: #64748B; }
+
+.desc { font-size: 14px; line-height: 1.7; color: #94A3B8; }
+
+.links ul { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.links ul li a {
+  color: #94A3B8; text-decoration: none; font-size: 14px;
+  transition: color var(--transition-fast);
+}
+.links ul li a:hover { color: #fff; }
+
+.linkTitle { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: var(--space-3); }
+
+.contact { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.contactItem { display: flex; align-items: flex-start; gap: var(--space-2); font-size: 14px; line-height: 1.5; }
+.contactItem svg { flex-shrink: 0; margin-top: 2px; color: var(--color-accent); }
+.contactItem a { color: #94A3B8; text-decoration: none; }
+.contactItem a:hover { color: #fff; }
+
+.bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: space-between;
+  font-size: 13px;
+  color: #64748B;
+}
+
+.bottom a { color: #94A3B8; }
+.bottom a:hover { color: #fff; }

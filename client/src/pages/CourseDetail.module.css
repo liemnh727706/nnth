@@ -1,0 +1,100 @@
+.page { min-height: calc(100dvh - 64px); background: var(--color-muted); }
+
+.hero {
+  background: var(--color-primary);
+  padding: var(--space-8) 0;
+  margin-bottom: var(--space-8);
+}
+
+.back {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  color: #94A3B8; text-decoration: none; font-size: 14px;
+  margin-bottom: var(--space-4);
+  transition: color var(--transition-fast);
+}
+.back:hover { color: #fff; }
+
+.title {
+  font-size: 32px; font-weight: 700; color: #fff; margin: 0 0 var(--space-4);
+  font-family: var(--font-heading); line-height: 1.25;
+}
+
+.badges { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.badge {
+  padding: 4px 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.12); color: #CBD5E1;
+  font-size: 12px; font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  padding-bottom: var(--space-12);
+  align-items: start;
+}
+@media (min-width: 768px) { .layout { grid-template-columns: 1fr 360px; } }
+
+/* Main */
+.section {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl); padding: var(--space-6); margin-bottom: var(--space-5);
+}
+.sectionTitle { font-size: 18px; font-weight: 700; color: var(--color-primary); margin: 0 0 var(--space-4); font-family: var(--font-heading); }
+.desc { font-size: 15px; line-height: 1.8; color: var(--color-foreground); margin: 0; }
+
+.infoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+@media (max-width: 480px) { .infoGrid { grid-template-columns: 1fr; } }
+
+.infoItem { display: flex; align-items: flex-start; gap: var(--space-3); }
+.infoItem svg { color: var(--color-accent); flex-shrink: 0; margin-top: 2px; }
+.infoLabel { font-size: 12px; color: var(--color-muted-text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.infoValue { font-size: 14px; font-weight: 600; color: var(--color-foreground); margin-top: 2px; }
+
+/* CTA Card */
+.aside { position: sticky; top: calc(64px + var(--space-4)); }
+
+.ctaCard {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl); padding: var(--space-6);
+  box-shadow: var(--shadow-lg);
+}
+
+.ctaPrice { font-size: 28px; font-weight: 700; color: var(--color-primary); font-family: var(--font-heading); margin-bottom: var(--space-5); }
+
+.fullBadge { background: #FEE2E2; color: #991B1B; text-align: center; padding: var(--space-4); border-radius: var(--radius-lg); font-weight: 700; }
+
+.seatsBar { margin-bottom: var(--space-5); }
+.seatsText { font-size: 13px; color: var(--color-muted-text); margin-bottom: var(--space-2); }
+.seatsTrack { height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
+.seatsFill { height: 100%; background: var(--color-accent); border-radius: 3px; transition: width 0.3s; }
+
+.paymentSection { margin-bottom: var(--space-5); }
+.payLabel { font-size: 13px; font-weight: 600; color: var(--color-foreground); margin: 0 0 var(--space-3); }
+.payMethods { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.payOption {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 10px 14px; border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md); cursor: pointer; font-size: 13px;
+  transition: all var(--transition-fast); color: var(--color-foreground);
+  min-height: 44px;
+}
+.payOption:hover { border-color: var(--color-accent); background: #EFF6FF; }
+.paySelected { border-color: var(--color-accent); background: #EFF6FF; font-weight: 600; }
+.payRadio { accent-color: var(--color-accent); width: 16px; height: 16px; flex-shrink: 0; }
+
+.enrollBtn {
+  width: 100%; background: var(--color-accent); color: #fff;
+  border: none; padding: 14px; border-radius: var(--radius-lg);
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  transition: opacity var(--transition-fast); min-height: 52px;
+}
+.enrollBtn:hover:not(:disabled) { opacity: 0.9; }
+.enrollBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.loginHint { text-align: center; font-size: 13px; color: var(--color-muted-text); margin-top: var(--space-3); }
+.loginHint a { color: var(--color-accent); font-weight: 600; text-decoration: none; }
+.loginHint a:hover { text-decoration: underline; }

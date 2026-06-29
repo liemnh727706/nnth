@@ -1,0 +1,43 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/nnth
+
+            echo "==> Pull latest code"
+            git pull origin main
+
+            echo "==> Copy env files (nếu chưa có)"
+            [ -f server/.env ] || cp server/.env.example server/.env
+
+            echo "==> Build & restart containers"
+            docker compose pull postgres
+            docker compose build --no-cache server client
+            docker compose up -d --remove-orphans
+
+            echo "==> Run DB migrations"
+            docker compose exec -T server node database/migrate.js
+
+            echo "==> Health check"
+            sleep 5
+            curl -f http://localhost:5000/api/health || exit 1
+
+            echo "==> Done"
