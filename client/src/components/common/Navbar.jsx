@@ -1,150 +1,184 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, Globe, ChevronDown, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Search, ChevronDown, Menu, X, Globe, User, LogOut, LayoutDashboard } from 'lucide-react';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const toggleLang = () => {
-    i18n.changeLanguage(i18n.language === 'vi' ? 'en' : 'vi');
-  };
+  const toggleLang = () => i18n.changeLanguage(i18n.language === 'vi' ? 'en' : 'vi');
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
     setUserMenuOpen(false);
+    navigate('/');
   };
 
-  const isAdmin = user && ['super_admin', 'staff'].includes(user.role);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
+
+  const navLinks = [
+    { to: '/courses?category=foreign_language', label: 'Ngoại ngữ', sub: [
+      { to: '/courses?language=english', label: 'Tiếng Anh' },
+      { to: '/courses?language=japanese', label: 'Tiếng Nhật' },
+      { to: '/courses?language=chinese', label: 'Tiếng Trung' },
+      { to: '/courses?language=korean', label: 'Tiếng Hàn' },
+    ]},
+    { to: '/courses?category=informatics', label: 'Tin học' },
+    { to: '/announcements', label: 'Thông báo' },
+  ];
 
   return (
-    <header className={styles.header} role="banner">
-      <div className={`container ${styles.inner}`}>
-        {/* Logo */}
-        <Link to="/" className={styles.logo} aria-label="NNTH HCMUAF - Trang chủ">
-          <div className={styles.logoMark}>
-            <span>NN</span>
-          </div>
-          <div className={styles.logoText}>
-            <span className={styles.logoMain}>NNTH</span>
-            <span className={styles.logoSub}>Đại học Nông Lâm TP.HCM</span>
-          </div>
-        </Link>
-
-        {/* Desktop nav */}
-        <nav className={styles.nav} aria-label="Main navigation">
-          <NavLink to="/" className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink} end>
-            {t('nav.home')}
-          </NavLink>
-          <NavLink to="/courses" className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}>
-            {t('nav.courses')}
-          </NavLink>
-          <NavLink to="/announcements" className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}>
-            {t('nav.announcements')}
-          </NavLink>
-        </nav>
-
-        {/* Actions */}
-        <div className={styles.actions}>
-          {/* Language toggle */}
-          <button
-            onClick={toggleLang}
-            className={styles.iconBtn}
-            aria-label={`Switch to ${i18n.language === 'vi' ? 'English' : 'Tiếng Việt'}`}
-          >
-            <Globe size={18} />
-            <span>{i18n.language === 'vi' ? 'EN' : 'VI'}</span>
-          </button>
-
-          {user ? (
-            <div className={styles.userMenu}>
-              <button
-                className={styles.userBtn}
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                aria-expanded={userMenuOpen}
-                aria-haspopup="true"
-              >
-                {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="" className={styles.avatar} width={32} height={32} />
-                ) : (
-                  <div className={styles.avatarFallback}>
-                    {user.first_name?.[0]}{user.last_name?.[0]}
-                  </div>
+    <>
+      {/* Utility bar - như MIT top strip */}
+      <div className={styles.utilityBar}>
+        <div className={styles.utilityInner}>
+          <span className={styles.utilityBrand}>Đại học Nông Lâm TP.HCM</span>
+          <div className={styles.utilityRight}>
+            <button className={styles.utilityBtn} onClick={toggleLang} aria-label="Chuyển ngôn ngữ">
+              <Globe size={13} />
+              {i18n.language === 'vi' ? 'EN' : 'VI'}
+            </button>
+            {user ? (
+              <div className={styles.userMenuWrap}>
+                <button
+                  className={styles.utilityBtn}
+                  onClick={() => setUserMenuOpen(v => !v)}
+                  aria-expanded={userMenuOpen}
+                >
+                  <User size={13} /> {user.first_name} <ChevronDown size={11} />
+                </button>
+                {userMenuOpen && (
+                  <>
+                    <div className={styles.dropOverlay} onClick={() => setUserMenuOpen(false)} />
+                    <div className={styles.userDropdown}>
+                      <Link to="/dashboard" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>
+                        <LayoutDashboard size={14} /> Tổng quan
+                      </Link>
+                      <Link to="/my-enrollments" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Ghi danh của tôi</Link>
+                      <Link to="/exam-results" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Kết quả thi</Link>
+                      <Link to="/profile" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Hồ sơ cá nhân</Link>
+                      {(user.role === 'super_admin' || user.role === 'staff') && (
+                        <Link to="/admin" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Quản trị</Link>
+                      )}
+                      <div className={styles.dropDivider} />
+                      <button className={`${styles.dropItem} ${styles.dropLogout}`} onClick={handleLogout}>
+                        <LogOut size={14} /> Đăng xuất
+                      </button>
+                    </div>
+                  </>
                 )}
-                <span className={styles.userName}>{user.first_name} {user.last_name}</span>
-                <ChevronDown size={16} />
-              </button>
-
-              {userMenuOpen && (
-                <div className={styles.dropdown} role="menu">
-                  <Link to="/dashboard" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)} role="menuitem">
-                    <LayoutDashboard size={16} />
-                    {t('nav.dashboard')}
-                  </Link>
-                  <Link to="/profile" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)} role="menuitem">
-                    <User size={16} />
-                    {t('nav.profile')}
-                  </Link>
-                  {isAdmin && (
-                    <Link to="/admin" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)} role="menuitem">
-                      <LayoutDashboard size={16} />
-                      {t('nav.admin')}
-                    </Link>
-                  )}
-                  <hr className={styles.divider} />
-                  <button className={`${styles.dropdownItem} ${styles.danger}`} onClick={handleLogout} role="menuitem">
-                    <LogOut size={16} />
-                    {t('nav.logout')}
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <Link to="/login" className={styles.loginBtn}>{t('nav.login')}</Link>
-              <Link to="/register" className={styles.registerBtn}>{t('nav.register')}</Link>
-            </>
-          )}
-
-          {/* Mobile hamburger */}
-          <button
-            className={styles.hamburger}
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-expanded={menuOpen}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+              </div>
+            ) : (
+              <>
+                <Link to="/login" className={styles.utilityBtn}>Đăng nhập</Link>
+                <Link to="/register" className={styles.utilityBtnPrimary}>Đăng ký</Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Main header */}
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <Link to="/" className={styles.logo} aria-label="Trang chủ">
+            <div className={styles.logoIcon}>NN</div>
+            <div className={styles.logoText}>
+              <span className={styles.logoMain}>Trung tâm Ngoại ngữ &amp; Tin học</span>
+              <span className={styles.logoSub}>Đại học Nông Lâm TP.HCM</span>
+            </div>
+          </Link>
+
+          <nav className={styles.nav} aria-label="Điều hướng chính">
+            {navLinks.map(link => (
+              <div key={link.to} className={styles.navItem}>
+                <NavLink
+                  to={link.to}
+                  className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+                >
+                  {link.label}
+                  {link.sub && <ChevronDown size={13} className={styles.navChevron} aria-hidden="true" />}
+                </NavLink>
+                {link.sub && (
+                  <div className={styles.dropdown}>
+                    {link.sub.map(s => (
+                      <Link key={s.to} to={s.to} className={styles.dropdownItem}>{s.label}</Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+
+          <div className={styles.headerActions}>
+            <button className={styles.searchBtn} onClick={() => setSearchOpen(v => !v)} aria-label="Tìm kiếm">
+              {searchOpen ? <X size={20} /> : <Search size={20} />}
+            </button>
+            <button className={styles.mobileMenuBtn} onClick={() => setMobileOpen(v => !v)} aria-label="Menu">
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        </div>
+
+        {searchOpen && (
+          <div className={styles.searchBar}>
+            <form onSubmit={handleSearch} className={styles.searchForm}>
+              <Search size={18} className={styles.searchBarIcon} aria-hidden="true" />
+              <input
+                type="search"
+                placeholder="Tìm kiếm khóa học..."
+                className={styles.searchInput}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+              <button type="submit" className={styles.searchSubmit}>Tìm kiếm</button>
+            </form>
+          </div>
+        )}
+      </header>
+
       {/* Mobile menu */}
-      {menuOpen && (
-        <div className={styles.mobileMenu} role="dialog" aria-label="Mobile navigation">
-          <NavLink to="/" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.home')}</NavLink>
-          <NavLink to="/courses" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.courses')}</NavLink>
-          <NavLink to="/announcements" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.announcements')}</NavLink>
+      {mobileOpen && (
+        <div className={styles.mobileMenu}>
+          {navLinks.map(link => (
+            <div key={link.to}>
+              <Link to={link.to} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>{link.label}</Link>
+              {link.sub?.map(s => (
+                <Link key={s.to} to={s.to} className={styles.mobileSub} onClick={() => setMobileOpen(false)}>{s.label}</Link>
+              ))}
+            </div>
+          ))}
+          <div className={styles.mobileDivider} />
           {user ? (
             <>
-              <NavLink to="/dashboard" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.dashboard')}</NavLink>
-              <NavLink to="/profile" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.profile')}</NavLink>
-              <button className={`${styles.mobileLink} ${styles.danger}`} onClick={handleLogout}>{t('nav.logout')}</button>
+              <Link to="/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Tổng quan</Link>
+              <Link to="/profile" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Hồ sơ</Link>
+              <button className={styles.mobileLink} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => { handleLogout(); setMobileOpen(false); }}>Đăng xuất</button>
             </>
           ) : (
             <>
-              <Link to="/login" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.login')}</Link>
-              <Link to="/register" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>{t('nav.register')}</Link>
+              <Link to="/login" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Đăng nhập</Link>
+              <Link to="/register" className={styles.mobileLinkPrimary} onClick={() => setMobileOpen(false)}>Đăng ký</Link>
             </>
           )}
         </div>
       )}
-    </header>
+    </>
   );
 }
