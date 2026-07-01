@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import Layout from './components/common/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import useSiteTheme from './config/useSiteTheme';
 
 // Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
@@ -84,10 +85,17 @@ function AppRoutes() {
   );
 }
 
+function ThemeProvider({ children }) {
+  useSiteTheme();
+  return children;
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ThemeProvider>
+        <AppRoutes />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

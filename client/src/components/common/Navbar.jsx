@@ -3,10 +3,11 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Search, ChevronDown, Menu, X, Globe, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { SITE, NAV_ITEMS, COLORS } from '../../config/site';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,23 +32,12 @@ export default function Navbar() {
     }
   };
 
-  const navLinks = [
-    { to: '/courses?category=foreign_language', label: 'Ngoại ngữ', sub: [
-      { to: '/courses?language=english', label: 'Tiếng Anh' },
-      { to: '/courses?language=japanese', label: 'Tiếng Nhật' },
-      { to: '/courses?language=chinese', label: 'Tiếng Trung' },
-      { to: '/courses?language=korean', label: 'Tiếng Hàn' },
-    ]},
-    { to: '/courses?category=informatics', label: 'Tin học' },
-    { to: '/announcements', label: 'Thông báo' },
-  ];
-
   return (
     <>
-      {/* Utility bar - như MIT top strip */}
-      <div className={styles.utilityBar}>
+      {/* ── Level 1: Utility bar ─────────────────────── */}
+      <div className={styles.utilityBar} style={{ background: COLORS.utilityBg }}>
         <div className={styles.utilityInner}>
-          <span className={styles.utilityBrand}>Đại học Nông Lâm TP.HCM</span>
+          <span className={styles.utilityBrand}>{SITE.parentOrg}</span>
           <div className={styles.utilityRight}>
             <button className={styles.utilityBtn} onClick={toggleLang} aria-label="Chuyển ngôn ngữ">
               <Globe size={13} />
@@ -59,6 +49,7 @@ export default function Navbar() {
                   className={styles.utilityBtn}
                   onClick={() => setUserMenuOpen(v => !v)}
                   aria-expanded={userMenuOpen}
+                  aria-haspopup="true"
                 >
                   <User size={13} /> {user.first_name} <ChevronDown size={11} />
                 </button>
@@ -70,8 +61,8 @@ export default function Navbar() {
                         <LayoutDashboard size={14} /> Tổng quan
                       </Link>
                       <Link to="/my-enrollments" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Ghi danh của tôi</Link>
-                      <Link to="/exam-results" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Kết quả thi</Link>
-                      <Link to="/profile" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Hồ sơ cá nhân</Link>
+                      <Link to="/exam-results"    className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Kết quả thi</Link>
+                      <Link to="/profile"         className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Hồ sơ cá nhân</Link>
                       {(user.role === 'super_admin' || user.role === 'staff') && (
                         <Link to="/admin" className={styles.dropItem} onClick={() => setUserMenuOpen(false)}>Quản trị</Link>
                       )}
@@ -85,7 +76,7 @@ export default function Navbar() {
               </div>
             ) : (
               <>
-                <Link to="/login" className={styles.utilityBtn}>Đăng nhập</Link>
+                <Link to="/login"    className={styles.utilityBtn}>Đăng nhập</Link>
                 <Link to="/register" className={styles.utilityBtnPrimary}>Đăng ký</Link>
               </>
             )}
@@ -93,31 +84,56 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main header */}
+      {/* ── Level 2: Main header ─────────────────────── */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link to="/" className={styles.logo} aria-label="Trang chủ">
-            <div className={styles.logoIcon}>NN</div>
+
+          {/* Logo — cấu hình từ site.js */}
+          <Link to="/" className={styles.logo} aria-label={`${SITE.name} — Trang chủ`}>
+            {SITE.logoType === 'image' && SITE.logoImageUrl ? (
+              <img
+                src={SITE.logoImageUrl}
+                alt={SITE.shortName}
+                className={styles.logoImage}
+                width={44}
+                height={44}
+              />
+            ) : (
+              <div className={styles.logoIcon} style={{ background: COLORS.primary }}>
+                {SITE.logoMark}
+              </div>
+            )}
             <div className={styles.logoText}>
-              <span className={styles.logoMain}>Trung tâm Ngoại ngữ &amp; Tin học</span>
-              <span className={styles.logoSub}>Đại học Nông Lâm TP.HCM</span>
+              <span className={styles.logoMain}>{SITE.name}</span>
+              <span className={styles.logoSub}>{SITE.parentOrg}</span>
             </div>
           </Link>
 
+          {/* Desktop nav — đọc từ NAV_ITEMS trong site.js */}
           <nav className={styles.nav} aria-label="Điều hướng chính">
-            {navLinks.map(link => (
-              <div key={link.to} className={styles.navItem}>
+            {NAV_ITEMS.map(item => (
+              <div key={item.to} className={styles.navItem}>
                 <NavLink
-                  to={link.to}
+                  to={item.to}
                   className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
                 >
-                  {link.label}
-                  {link.sub && <ChevronDown size={13} className={styles.navChevron} aria-hidden="true" />}
+                  {item.label}
+                  {item.children && (
+                    <ChevronDown size={13} className={styles.navChevron} aria-hidden="true" />
+                  )}
                 </NavLink>
-                {link.sub && (
-                  <div className={styles.dropdown}>
-                    {link.sub.map(s => (
-                      <Link key={s.to} to={s.to} className={styles.dropdownItem}>{s.label}</Link>
+                {item.children && (
+                  <div className={styles.dropdown} role="menu">
+                    {item.children.map(child => (
+                      <Link
+                        key={child.to}
+                        to={child.to}
+                        className={styles.dropdownItem}
+                        role="menuitem"
+                      >
+                        {child.icon && <span className={styles.dropdownIcon} aria-hidden="true">{child.icon}</span>}
+                        {child.label}
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -125,19 +141,31 @@ export default function Navbar() {
             ))}
           </nav>
 
+          {/* Actions */}
           <div className={styles.headerActions}>
-            <button className={styles.searchBtn} onClick={() => setSearchOpen(v => !v)} aria-label="Tìm kiếm">
+            <button
+              className={styles.searchBtn}
+              onClick={() => setSearchOpen(v => !v)}
+              aria-label={searchOpen ? 'Đóng tìm kiếm' : 'Mở tìm kiếm'}
+              aria-expanded={searchOpen}
+            >
               {searchOpen ? <X size={20} /> : <Search size={20} />}
             </button>
-            <button className={styles.mobileMenuBtn} onClick={() => setMobileOpen(v => !v)} aria-label="Menu">
+            <button
+              className={styles.mobileMenuBtn}
+              onClick={() => setMobileOpen(v => !v)}
+              aria-label={mobileOpen ? 'Đóng menu' : 'Mở menu'}
+              aria-expanded={mobileOpen}
+            >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
 
+        {/* Search bar */}
         {searchOpen && (
-          <div className={styles.searchBar}>
-            <form onSubmit={handleSearch} className={styles.searchForm}>
+          <div className={styles.searchBar} style={{ background: COLORS.primary }}>
+            <form onSubmit={handleSearch} className={styles.searchForm} role="search">
               <Search size={18} className={styles.searchBarIcon} aria-hidden="true" />
               <input
                 type="search"
@@ -146,6 +174,7 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 autoFocus
+                aria-label="Tìm kiếm"
               />
               <button type="submit" className={styles.searchSubmit}>Tìm kiếm</button>
             </form>
@@ -156,11 +185,20 @@ export default function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className={styles.mobileMenu}>
-          {navLinks.map(link => (
-            <div key={link.to}>
-              <Link to={link.to} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>{link.label}</Link>
-              {link.sub?.map(s => (
-                <Link key={s.to} to={s.to} className={styles.mobileSub} onClick={() => setMobileOpen(false)}>{s.label}</Link>
+          {NAV_ITEMS.map(item => (
+            <div key={item.to}>
+              <Link to={item.to} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                {item.label}
+              </Link>
+              {item.children?.map(child => (
+                <Link
+                  key={child.to}
+                  to={child.to}
+                  className={styles.mobileSub}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {child.icon && <span aria-hidden="true">{child.icon}</span>} {child.label}
+                </Link>
               ))}
             </div>
           ))}
@@ -168,12 +206,21 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Tổng quan</Link>
-              <Link to="/profile" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Hồ sơ</Link>
-              <button className={styles.mobileLink} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => { handleLogout(); setMobileOpen(false); }}>Đăng xuất</button>
+              <Link to="/profile"   className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Hồ sơ</Link>
+              {(user.role === 'super_admin' || user.role === 'staff') && (
+                <Link to="/admin" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Quản trị</Link>
+              )}
+              <button
+                className={styles.mobileLink}
+                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626' }}
+                onClick={() => { handleLogout(); setMobileOpen(false); }}
+              >
+                Đăng xuất
+              </button>
             </>
           ) : (
             <>
-              <Link to="/login" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Đăng nhập</Link>
+              <Link to="/login"    className={styles.mobileLink}        onClick={() => setMobileOpen(false)}>Đăng nhập</Link>
               <Link to="/register" className={styles.mobileLinkPrimary} onClick={() => setMobileOpen(false)}>Đăng ký</Link>
             </>
           )}

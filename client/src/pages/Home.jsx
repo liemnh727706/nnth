@@ -1,93 +1,20 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  BookOpen, Users, Award, ArrowRight, Clock,
-  Globe, Monitor, Star, ChevronRight, GraduationCap,
-  FileText, Bell, Search
+  ArrowRight, ChevronRight, Search,
+  GraduationCap, FileText, Monitor, Star,
+  Users, BookOpen, Award, Globe, Bell, Clock
 } from 'lucide-react';
 import api from '../utils/api';
+import { HERO, STATS, PROGRAMS, WHY_ITEMS, COLORS } from '../config/site';
 import styles from './Home.module.css';
 
-const PROGRAMS = [
-  {
-    id: 'english',
-    icon: '🇬🇧',
-    title: 'Tiếng Anh',
-    subtitle: 'English Language',
-    desc: 'TOEIC, IELTS, giao tiếp thương mại và học thuật cho sinh viên, cán bộ',
-    to: '/courses?language=english',
-    color: '#1D4ED8',
-  },
-  {
-    id: 'japanese',
-    icon: '🇯🇵',
-    title: 'Tiếng Nhật',
-    subtitle: 'Japanese Language',
-    desc: 'Chương trình JLPT N5→N2, giao tiếp thực tế và văn hóa Nhật Bản',
-    to: '/courses?language=japanese',
-    color: '#DC2626',
-  },
-  {
-    id: 'chinese',
-    icon: '🇨🇳',
-    title: 'Tiếng Trung',
-    subtitle: 'Chinese Language',
-    desc: 'Tiếng Trung cơ bản đến nâng cao, HSK chuẩn quốc tế',
-    to: '/courses?language=chinese',
-    color: '#B45309',
-  },
-  {
-    id: 'korean',
-    icon: '🇰🇷',
-    title: 'Tiếng Hàn',
-    subtitle: 'Korean Language',
-    desc: 'TOPIK chuẩn bộ giáo dục Hàn Quốc, giao tiếp và văn hóa K',
-    to: '/courses?language=korean',
-    color: '#7C3AED',
-  },
-  {
-    id: 'informatics',
-    icon: '💻',
-    title: 'Tin học',
-    subtitle: 'Information Technology',
-    desc: 'Chứng chỉ tin học văn phòng, IC3, MOS theo chuẩn quốc gia',
-    to: '/courses?category=informatics',
-    color: '#059669',
-  },
-];
-
-const STATS = [
-  { label: 'Học viên đã đào tạo', value: '10,000+', icon: <Users size={20} /> },
-  { label: 'Khóa học đang mở', value: '50+', icon: <BookOpen size={20} /> },
-  { label: 'Năm kinh nghiệm', value: '20+', icon: <Award size={20} /> },
-  { label: 'Đối tác doanh nghiệp', value: '100+', icon: <Globe size={20} /> },
-];
-
-const WHY_ITEMS = [
-  {
-    icon: <GraduationCap size={28} />,
-    title: 'Đội ngũ giảng viên chất lượng',
-    desc: 'Giảng viên có bằng cấp quốc tế, kinh nghiệm giảng dạy lâu năm tại Đại học Nông Lâm TP.HCM',
-  },
-  {
-    icon: <FileText size={28} />,
-    title: 'Chứng chỉ được công nhận',
-    desc: 'Chứng chỉ do Trường ĐH Nông Lâm cấp, được Bộ GD&ĐT và các cơ quan tuyển dụng công nhận',
-  },
-  {
-    icon: <Monitor size={28} />,
-    title: 'Cơ sở vật chất hiện đại',
-    desc: 'Phòng học điều hòa, máy tính cấu hình cao, phòng lab ngôn ngữ đạt chuẩn',
-  },
-  {
-    icon: <Star size={28} />,
-    title: 'Học phí hợp lý',
-    desc: 'Học phí ưu đãi cho sinh viên Nông Lâm, hỗ trợ trả góp và học bổng khuyến khích',
-  },
-];
+const ICON_MAP = { GraduationCap, FileText, Monitor, Star, Users, BookOpen, Award, Globe };
 
 export default function Home() {
+  const navigate = useNavigate();
+
   const { data: coursesData } = useQuery({
     queryKey: ['featured-courses'],
     queryFn: () => api.get('/courses?limit=6').then(r => r.data),
@@ -101,51 +28,54 @@ export default function Home() {
   const courses = coursesData?.courses || [];
   const announcements = announcementsData?.announcements || [];
 
+  const handleHeroSearch = (e) => {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(e.target.value.trim())}`);
+    }
+  };
+
   return (
     <main>
-      {/* ── HERO ─────────────────────────────────────────── */}
-      <section className={styles.hero} aria-labelledby="hero-heading">
+
+      {/* ── HERO ─────────────────────────────────────── */}
+      <section
+        className={styles.hero}
+        style={HERO.backgroundType === 'image' && HERO.backgroundImage
+          ? { backgroundImage: `url(${HERO.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : { background: COLORS.primary }
+        }
+        aria-labelledby="hero-heading"
+      >
         <div className={styles.heroOverlay} aria-hidden="true" />
         <div className={styles.heroContainer}>
-          <div className={styles.heroTag}>Trung tâm đào tạo chính thức</div>
+          <div className={styles.heroTag}>{HERO.tag}</div>
           <h1 id="hero-heading" className={styles.heroTitle}>
-            Trung tâm Ngoại ngữ<br />
-            <span className={styles.heroAccent}>&amp; Tin học</span>
+            {HERO.title}<br />
+            <span className={styles.heroAccent}>{HERO.titleAccent}</span>
           </h1>
-          <p className={styles.heroSub}>
-            Nâng cao năng lực ngôn ngữ và công nghệ thông tin —<br className={styles.heroBreak} />
-            chuẩn bị hành trang cho sự nghiệp trong môi trường toàn cầu.
-          </p>
+          <p className={styles.heroSub}>{HERO.subtitle}</p>
           <div className={styles.heroActions}>
-            <Link to="/courses" className={styles.heroBtn}>
-              Khám phá khóa học <ArrowRight size={18} />
+            <Link to={HERO.ctaPrimary.to} className={styles.heroBtn}>
+              {HERO.ctaPrimary.label} <ArrowRight size={18} aria-hidden="true" />
             </Link>
-            <Link to="/register" className={styles.heroBtnGhost}>
-              Đăng ký học
+            <Link to={HERO.ctaSecondary.to} className={styles.heroBtnGhost}>
+              {HERO.ctaSecondary.label}
             </Link>
           </div>
-
-          {/* Hero search */}
           <div className={styles.heroSearch}>
             <Search size={18} className={styles.heroSearchIcon} aria-hidden="true" />
             <input
               type="search"
-              placeholder="Tìm kiếm khóa học, ngôn ngữ, lịch thi..."
+              placeholder={HERO.searchPlaceholder}
               className={styles.heroSearchInput}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && e.target.value.trim()) {
-                  window.location.href = `/courses?search=${encodeURIComponent(e.target.value.trim())}`;
-                }
-              }}
+              onKeyDown={handleHeroSearch}
               aria-label="Tìm kiếm khóa học"
             />
             <button
               className={styles.heroSearchBtn}
               onClick={e => {
                 const input = e.currentTarget.previousSibling;
-                if (input.value.trim()) {
-                  window.location.href = `/courses?search=${encodeURIComponent(input.value.trim())}`;
-                }
+                if (input.value.trim()) navigate(`/courses?search=${encodeURIComponent(input.value.trim())}`);
               }}
             >
               Tìm kiếm
@@ -154,22 +84,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── STATS BAR ────────────────────────────────────── */}
-      <section className={styles.statsBar} aria-label="Thống kê">
+      {/* ── STATS BAR ────────────────────────────────── */}
+      <section className={styles.statsBar} style={{ background: COLORS.statsBg }} aria-label="Thống kê">
         <div className={styles.statsContainer}>
-          {STATS.map(s => (
-            <div key={s.label} className={styles.statItem}>
-              <span className={styles.statIcon} aria-hidden="true">{s.icon}</span>
-              <div>
-                <div className={styles.statValue}>{s.value}</div>
-                <div className={styles.statLabel}>{s.label}</div>
-              </div>
+          {STATS.map((s, i) => (
+            <div key={i} className={styles.statItem}>
+              <div className={styles.statValue}>{s.value}</div>
+              <div className={styles.statLabel}>{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── PROGRAMS GRID ────────────────────────────────── */}
+      {/* ── PROGRAMS ─────────────────────────────────── */}
       <section className={styles.section} aria-labelledby="programs-heading">
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
@@ -184,21 +111,41 @@ export default function Home() {
 
           <div className={styles.programsGrid}>
             {PROGRAMS.map(p => (
-              <Link key={p.id} to={p.to} className={styles.programCard} style={{ '--accent': p.color }}>
-                <div className={styles.programCardTop}>
-                  <span className={styles.programEmoji} aria-hidden="true">{p.icon}</span>
-                  <div className={styles.programArrow} aria-hidden="true"><ArrowRight size={16} /></div>
+              <Link
+                key={p.id}
+                to={p.to}
+                className={styles.programCard}
+                style={{ '--accent': p.accentColor }}
+              >
+                {/* Ảnh minh họa */}
+                {p.imageUrl ? (
+                  <div className={styles.programImg}>
+                    <img src={p.imageUrl} alt={p.title} loading="lazy" width={400} height={160} />
+                    <div className={styles.programImgOverlay} aria-hidden="true" />
+                    <span className={styles.programImgEmoji} aria-hidden="true">{p.icon}</span>
+                  </div>
+                ) : (
+                  <div className={styles.programImgFallback} style={{ background: p.accentColor }}>
+                    <span className={styles.programFallbackEmoji} aria-hidden="true">{p.icon}</span>
+                  </div>
+                )}
+                <div className={styles.programBody}>
+                  <div className={styles.programTitles}>
+                    <h3 className={styles.programTitle}>{p.title}</h3>
+                    <p className={styles.programSub}>{p.subtitle}</p>
+                  </div>
+                  <p className={styles.programDesc}>{p.desc}</p>
+                  <span className={styles.programCta}>
+                    Xem khóa học <ArrowRight size={14} aria-hidden="true" />
+                  </span>
                 </div>
-                <h3 className={styles.programTitle}>{p.title}</h3>
-                <p className={styles.programSub}>{p.subtitle}</p>
-                <p className={styles.programDesc}>{p.desc}</p>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FEATURED COURSES ─────────────────────────────── */}
+      {/* ── FEATURED COURSES ─────────────────────────── */}
       {courses.length > 0 && (
         <section className={`${styles.section} ${styles.sectionAlt}`} aria-labelledby="courses-heading">
           <div className={styles.container}>
@@ -213,28 +160,34 @@ export default function Home() {
             </div>
 
             <div className={styles.coursesGrid}>
-              {courses.map(course => (
-                <Link key={course.id} to={`/courses/${course.id}`} className={styles.courseCard}>
-                  <div className={styles.courseCardBadge} data-cat={course.category}>
-                    {course.category === 'foreign_language' ? course.language_name || 'Ngoại ngữ' : 'Tin học'}
+              {courses.map(c => (
+                <Link key={c.id} to={`/courses/${c.id}`} className={styles.courseCard}>
+                  <div className={styles.courseCardBadge} data-cat={c.category}>
+                    {c.category === 'foreign_language' ? (c.language_name || 'Ngoại ngữ') : 'Tin học'}
                   </div>
-                  <h3 className={styles.courseCardTitle}>{course.name}</h3>
-                  <p className={styles.courseCardDesc}>{course.description?.slice(0, 100)}{course.description?.length > 100 ? '…' : ''}</p>
+                  <h3 className={styles.courseCardTitle}>{c.name}</h3>
+                  <p className={styles.courseCardDesc}>
+                    {c.description?.slice(0, 100)}{c.description?.length > 100 ? '…' : ''}
+                  </p>
                   <div className={styles.courseCardMeta}>
                     <span className={styles.courseMetaItem}>
                       <Clock size={13} aria-hidden="true" />
-                      {course.schedule || 'Liên hệ lịch học'}
+                      {c.schedule || 'Liên hệ lịch học'}
                     </span>
                     <span className={styles.courseMetaItem}>
                       <Users size={13} aria-hidden="true" />
-                      {course.available_seats ?? '?'} chỗ còn
+                      {c.available_seats ?? '?'} chỗ còn
                     </span>
                   </div>
                   <div className={styles.courseCardFooter}>
                     <span className={styles.courseFee}>
-                      {course.tuition_fee ? Number(course.tuition_fee).toLocaleString('vi-VN') + ' ₫' : 'Liên hệ'}
+                      {c.tuition_fee
+                        ? Number(c.tuition_fee).toLocaleString('vi-VN') + ' ₫'
+                        : 'Liên hệ'}
                     </span>
-                    <span className={styles.courseEnroll}>Đăng ký <ArrowRight size={13} /></span>
+                    <span className={styles.courseEnroll}>
+                      Đăng ký <ArrowRight size={13} aria-hidden="true" />
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -243,7 +196,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* ── WHY US ───────────────────────────────────────── */}
+      {/* ── WHY US ───────────────────────────────────── */}
       <section className={styles.section} aria-labelledby="why-heading">
         <div className={styles.container}>
           <div className={styles.sectionCenter}>
@@ -251,18 +204,31 @@ export default function Home() {
             <h2 id="why-heading" className={styles.sectionTitle}>Cam kết chất lượng</h2>
           </div>
           <div className={styles.whyGrid}>
-            {WHY_ITEMS.map((item, i) => (
-              <div key={i} className={styles.whyCard}>
-                <div className={styles.whyIcon} aria-hidden="true">{item.icon}</div>
-                <h3 className={styles.whyTitle}>{item.title}</h3>
-                <p className={styles.whyDesc}>{item.desc}</p>
-              </div>
-            ))}
+            {WHY_ITEMS.map((item, i) => {
+              const Icon = ICON_MAP[item.icon];
+              return (
+                <div key={i} className={styles.whyCard}>
+                  {item.imageUrl ? (
+                    <div className={styles.whyImgWrap}>
+                      <img src={item.imageUrl} alt="" loading="lazy" className={styles.whyImg} />
+                    </div>
+                  ) : (
+                    Icon && (
+                      <div className={styles.whyIconWrap} aria-hidden="true">
+                        <Icon size={26} />
+                      </div>
+                    )
+                  )}
+                  <h3 className={styles.whyTitle}>{item.title}</h3>
+                  <p className={styles.whyDesc}>{item.desc}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ── ANNOUNCEMENTS ────────────────────────────────── */}
+      {/* ── ANNOUNCEMENTS ────────────────────────────── */}
       {announcements.length > 0 && (
         <section className={`${styles.section} ${styles.sectionAlt}`} aria-labelledby="news-heading">
           <div className={styles.container}>
@@ -277,34 +243,43 @@ export default function Home() {
             </div>
             <div className={styles.newsGrid}>
               {announcements.map(a => (
-                <div key={a.id} className={styles.newsCard}>
-                  {a.is_pinned && <span className={styles.newsPinned}><Bell size={12} /> Ghim</span>}
-                  <div className={styles.newsDate}>
+                <article key={a.id} className={styles.newsCard}>
+                  {a.is_pinned && (
+                    <span className={styles.newsPinned}><Bell size={11} aria-hidden="true" /> Ghim</span>
+                  )}
+                  <time className={styles.newsDate} dateTime={a.published_at || a.created_at}>
                     {new Date(a.published_at || a.created_at).toLocaleDateString('vi-VN')}
-                  </div>
+                  </time>
                   <h3 className={styles.newsTitle}>{a.title}</h3>
-                  <p className={styles.newsExcerpt}>{a.content?.slice(0, 120)}{a.content?.length > 120 ? '…' : ''}</p>
+                  <p className={styles.newsExcerpt}>
+                    {a.content?.slice(0, 120)}{a.content?.length > 120 ? '…' : ''}
+                  </p>
                   <Link to="/announcements" className={styles.newsReadMore}>
-                    Xem chi tiết <ChevronRight size={14} />
+                    Xem chi tiết <ChevronRight size={14} aria-hidden="true" />
                   </Link>
-                </div>
+                </article>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── CTA BANNER ───────────────────────────────────── */}
-      <section className={styles.ctaBanner} aria-labelledby="cta-heading">
+      {/* ── CTA BANNER ───────────────────────────────── */}
+      <section className={styles.ctaBanner} style={{ background: COLORS.ctaBg }} aria-labelledby="cta-heading">
         <div className={styles.container}>
-          <h2 id="cta-heading" className={styles.ctaTitle}>Sẵn sàng bắt đầu hành trình học tập?</h2>
-          <p className={styles.ctaSub}>Đăng ký ngay hôm nay để nhận tư vấn miễn phí và ưu đãi học phí dành cho sinh viên Nông Lâm.</p>
+          <h2 id="cta-heading" className={styles.ctaTitle}>
+            Sẵn sàng bắt đầu hành trình học tập?
+          </h2>
+          <p className={styles.ctaSub}>
+            Đăng ký ngay hôm nay để nhận tư vấn miễn phí và ưu đãi học phí dành cho sinh viên Nông Lâm.
+          </p>
           <div className={styles.ctaActions}>
-            <Link to="/courses" className={styles.ctaBtn}>Xem khóa học</Link>
+            <Link to="/courses"  className={styles.ctaBtn}>Xem khóa học</Link>
             <Link to="/register" className={styles.ctaBtnOutline}>Đăng ký tài khoản</Link>
           </div>
         </div>
       </section>
+
     </main>
   );
 }
