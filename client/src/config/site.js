@@ -15,9 +15,9 @@ export const SITE = {
   parentOrg: 'Đại học Nông Lâm TP.HCM',
   tagline: 'Nâng cao năng lực ngôn ngữ và công nghệ thông tin cho sinh viên và cán bộ',
 
-  logoType: 'text',         // 'text' | 'image'
+  logoType: 'image',        // 'text' | 'image'
   logoMark: 'NN',           // chữ hiển thị khi logoType = 'text'
-  logoImageUrl: '',         // đường dẫn ảnh khi logoType = 'image', vd: '/logo.png'
+  logoImageUrl: '/logo.png', // logo chính thức từ hcmuaf.edu.vn
 
   // Favicon (đặt file vào public/)
   favicon: '/favicon.ico',
