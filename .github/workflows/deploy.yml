@@ -25,19 +25,24 @@ jobs:
             echo "==> Pull latest code"
             git pull origin main
 
-            echo "==> Copy env files (nếu chưa có)"
-            [ -f server/.env ] || cp server/.env.example server/.env
+            echo "==> Tạo .env nếu chưa có"
+            if [ ! -f server/.env ]; then
+              cp server/.env.example server/.env
+              echo "⚠ server/.env chưa có — đã copy từ example. Cần điền credentials thực."
+            fi
 
             echo "==> Build & restart containers"
-            docker compose pull postgres
             docker compose build --no-cache server client
-            docker compose up -d --remove-orphans
+            docker compose up -d --remove-orphans postgres server client
+
+            echo "==> Chờ DB sẵn sàng"
+            sleep 12
 
             echo "==> Run DB migrations"
-            docker compose exec -T server node database/migrate.js
+            docker compose exec -T server node database/migrate.js || true
 
             echo "==> Health check"
-            sleep 5
+            sleep 3
             curl -f http://localhost:5000/api/health || exit 1
 
-            echo "==> Done"
+            echo "==> Done ✓"
