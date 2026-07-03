@@ -189,6 +189,24 @@ router.get('/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}/login?error=auth_failed` }),
   async (req, res) => {
     const user = req.user;
+
+    // User mới — chưa có account trong DB. Chuyển sang bước hoàn tất hồ sơ.
+    if (user.isNew) {
+      const pendingToken = jwt.sign(
+        {
+          purpose: 'complete_profile',
+          google_id: user.google_id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          avatar_url: user.avatar_url,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '30m' }
+      );
+      return res.redirect(`${process.env.CLIENT_URL}/complete-profile?token=${pendingToken}`);
+    }
+
     const { accessToken, refreshToken } = generateTokens(user.id);
 
     await query(
@@ -201,6 +219,77 @@ router.get('/google/callback',
     res.redirect(`${process.env.CLIENT_URL}/auth/callback?${params}`);
   }
 );
+
+// POST /api/auth/complete-profile — tạo account sau khi bổ sung thông tin bắt buộc
+router.post('/complete-profile', [
+  body('token').notEmpty(),
+  body('id_number').trim().isLength({ min: 9, max: 12 }).matches(/^\d+$/)
+    .withMessage('Số CCCD phải gồm 9-12 chữ số'),
+  body('first_name').trim().notEmpty().withMessage('Tên là bắt buộc'),
+  body('last_name').trim().notEmpty().withMessage('Họ là bắt buộc'),
+  body('date_of_birth').isDate().withMessage('Ngày sinh không hợp lệ'),
+  body('place_of_birth').trim().notEmpty().withMessage('Nơi sinh là bắt buộc'),
+  body('secondary_email').optional({ checkFalsy: true }).isEmail().withMessage('Email phụ không hợp lệ'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { token, id_number, first_name, last_name, date_of_birth, place_of_birth, secondary_email } = req.body;
+
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (payload.purpose !== 'complete_profile') throw new Error('wrong purpose');
+  } catch {
+    return res.status(401).json({ error: 'Phiên đăng ký đã hết hạn. Vui lòng đăng nhập lại bằng Google.' });
+  }
+
+  try {
+    // Kiểm tra trùng
+    const existing = await query(
+      'SELECT id FROM users WHERE email = $1 OR google_id = $2 OR id_number = $3',
+      [payload.email, payload.google_id, id_number]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: 'Email, tài khoản Google hoặc số CCCD đã được đăng ký' });
+    }
+
+    // Tạo account — LUÔN kèm email đăng nhập (email trường từ Google)
+    const result = await query(
+      `INSERT INTO users (google_id, email, first_name, last_name, id_number, date_of_birth,
+        place_of_birth, secondary_email, avatar_url, email_verified, role)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, 'student')
+       RETURNING *`,
+      [payload.google_id, payload.email, first_name, last_name, id_number, date_of_birth,
+       place_of_birth, secondary_email || null, payload.avatar_url]
+    );
+
+    const user = result.rows[0];
+    const { accessToken, refreshToken } = generateTokens(user.id);
+
+    await query(
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL \'7 days\')',
+      [user.id, refreshToken]
+    );
+
+    res.status(201).json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
+        avatar_url: user.avatar_url,
+        id_number: user.id_number,
+      },
+    });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Email hoặc số CCCD đã tồn tại' });
+    throw err;
+  }
+});
 
 // GET /api/auth/me
 router.get('/me', authenticate, async (req, res) => {

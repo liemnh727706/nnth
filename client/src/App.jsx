@@ -15,6 +15,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const MyEnrollments = lazy(() => import('./pages/MyEnrollments'));
 const ExamResults = lazy(() => import('./pages/ExamResults'));
@@ -53,6 +54,7 @@ function AppRoutes() {
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
           <Route path="/payment/result" element={<PaymentResult />} />
         </Route>
 

@@ -19,30 +19,27 @@ passport.use(new GoogleStrategy({
       return done(null, false, { message: `Email domain @${domain} không được phép. Vui lòng dùng email @hcmuaf.edu.vn hoặc @st.hcmuaf.edu.vn.` });
     }
 
-    let result = await query('SELECT * FROM users WHERE google_id = $1 OR email = $2', [profile.id, email]);
+    const result = await query('SELECT * FROM users WHERE google_id = $1 OR email = $2', [profile.id, email]);
 
     if (result.rows.length === 0) {
-      // New user - create with pending profile
-      result = await query(
-        `INSERT INTO users (google_id, email, first_name, last_name, avatar_url, email_verified, role)
-         VALUES ($1, $2, $3, $4, $5, TRUE, 'student') RETURNING *`,
-        [
-          profile.id,
-          email,
-          profile.name?.givenName || '',
-          profile.name?.familyName || '',
-          profile.photos?.[0]?.value || null,
-        ]
-      );
-    } else {
-      // Existing user - update google_id if needed
-      const user = result.rows[0];
-      if (!user.google_id) {
-        await query('UPDATE users SET google_id = $1, email_verified = TRUE WHERE id = $2', [profile.id, user.id]);
-      }
+      // User mới — KHÔNG tạo account ngay. Chuyển sang bước hoàn tất hồ sơ.
+      return done(null, {
+        isNew: true,
+        google_id: profile.id,
+        email,
+        first_name: profile.name?.givenName || '',
+        last_name: profile.name?.familyName || '',
+        avatar_url: profile.photos?.[0]?.value || null,
+      });
     }
 
-    return done(null, result.rows[0]);
+    // User đã tồn tại — cập nhật google_id nếu cần
+    const user = result.rows[0];
+    if (!user.google_id) {
+      await query('UPDATE users SET google_id = $1, email_verified = TRUE WHERE id = $2', [profile.id, user.id]);
+    }
+
+    return done(null, user);
   } catch (err) {
     return done(err);
   }
