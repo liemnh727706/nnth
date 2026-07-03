@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './AdminPage.module.css';
 
 const ROLE_LABELS = { student: 'Sinh viên', staff: 'Nhân viên', super_admin: 'Super Admin' };
+const LIMIT = 20;
 
 export default function AdminUsers() {
   const qc = useQueryClient();
@@ -17,7 +18,7 @@ export default function AdminUsers() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search],
-    queryFn: () => api.get(`/admin/users?page=${page}&limit=20&search=${search}`).then(r => r.data),
+    queryFn: () => api.get(`/admin/users?page=${page}&limit=${LIMIT}&search=${search}`).then(r => r.data),
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
@@ -34,6 +35,10 @@ export default function AdminUsers() {
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
   });
 
+  const users = data?.data || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / LIMIT);
+
   if (isLoading) return <LoadingSpinner />;
 
   return (
@@ -41,7 +46,7 @@ export default function AdminUsers() {
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>Quản lý người dùng</h1>
-          <p className={styles.pageSubtitle}>{data?.total || 0} tài khoản</p>
+          <p className={styles.pageSubtitle}>{total} tài khoản</p>
         </div>
         <button className={styles.btnPrimary} onClick={() => { setModal(true); reset({ role: 'staff' }); }}>
           <Plus size={16} /> Tạo tài khoản nhân viên
@@ -76,7 +81,7 @@ export default function AdminUsers() {
               </tr>
             </thead>
             <tbody>
-              {data?.users?.map(u => (
+              {users.map(u => (
                 <tr key={u.id}>
                   <td className={styles.bold}>{u.last_name} {u.first_name}</td>
                   <td className={styles.sub}>{u.email}</td>
@@ -97,7 +102,7 @@ export default function AdminUsers() {
                     <button
                       className={styles.iconBtn}
                       onClick={() => toggleMutation.mutate(u.id)}
-                      disabled={toggleMutation.isLoading}
+                      disabled={toggleMutation.isPending}
                       title={u.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
                       aria-label={u.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
                     >
@@ -106,23 +111,22 @@ export default function AdminUsers() {
                   </td>
                 </tr>
               ))}
-              {!data?.users?.length && (
+              {!users.length && (
                 <tr><td colSpan={8} className={styles.empty}>Không có người dùng nào</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
-        {data?.totalPages > 1 && (
+        {totalPages > 1 && (
           <div className={styles.pagination}>
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className={styles.pageBtn}>‹ Trước</button>
-            <span className={styles.pageInfo}>Trang {page}/{data.totalPages}</span>
-            <button disabled={page >= data.totalPages} onClick={() => setPage(p => p + 1)} className={styles.pageBtn}>Tiếp ›</button>
+            <span className={styles.pageInfo}>Trang {page}/{totalPages}</span>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className={styles.pageBtn}>Tiếp ›</button>
           </div>
         )}
       </div>
 
-      {/* Create staff modal */}
       {modal && (
         <div className={styles.modalOverlay} role="dialog" aria-modal="true">
           <div className={styles.modal} style={{ maxWidth: 460 }}>
@@ -136,17 +140,27 @@ export default function AdminUsers() {
                   <label className={styles.label}>Họ *</label>
                   <input className={`${styles.input} ${errors.last_name ? styles.inputError : ''}`}
                     {...register('last_name', { required: 'Bắt buộc' })} />
+                  {errors.last_name && <p className={styles.error}>{errors.last_name.message}</p>}
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Tên *</label>
                   <input className={`${styles.input} ${errors.first_name ? styles.inputError : ''}`}
                     {...register('first_name', { required: 'Bắt buộc' })} />
+                  {errors.first_name && <p className={styles.error}>{errors.first_name.message}</p>}
                 </div>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Số CCCD *</label>
+                <input className={`${styles.input} ${errors.id_number ? styles.inputError : ''}`}
+                  placeholder="9–12 chữ số"
+                  {...register('id_number', { required: 'Bắt buộc', pattern: { value: /^\d{9,12}$/, message: '9–12 chữ số' } })} />
+                {errors.id_number && <p className={styles.error}>{errors.id_number.message}</p>}
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Email (@hcmuaf.edu.vn) *</label>
                 <input type="email" className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
                   {...register('email', { required: 'Bắt buộc' })} />
+                {errors.email && <p className={styles.error}>{errors.email.message}</p>}
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Mật khẩu tạm thời *</label>
@@ -163,8 +177,8 @@ export default function AdminUsers() {
               </div>
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnSecondary} onClick={() => setModal(false)}>Hủy</button>
-                <button type="submit" className={styles.btnPrimary} disabled={createMutation.isLoading}>
-                  {createMutation.isLoading ? 'Đang tạo...' : 'Tạo tài khoản'}
+                <button type="submit" className={styles.btnPrimary} disabled={createMutation.isPending}>
+                  {createMutation.isPending ? 'Đang tạo...' : 'Tạo tài khoản'}
                 </button>
               </div>
             </form>

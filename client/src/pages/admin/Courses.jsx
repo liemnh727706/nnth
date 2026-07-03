@@ -18,23 +18,29 @@ const LANGUAGES = [
   { value: 'korean', label: 'Tiếng Hàn' },
 ];
 
+const LIMIT = 20;
+
 export default function AdminCourses() {
   const qc = useQueryClient();
-  const [modal, setModal] = useState(null); // null | 'create' | course object (edit)
+  const [modal, setModal] = useState(null);
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-courses', page],
-    queryFn: () => api.get(`/courses?page=${page}&limit=20`).then(r => r.data),
+    queryFn: () => api.get(`/courses?page=${page}&limit=${LIMIT}`).then(r => r.data),
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   const createMutation = useMutation({
-    mutationFn: (body) => api.post('/courses', body),
+    mutationFn: (body) => {
+      const fd = new FormData();
+      Object.entries(body).forEach(([k, v]) => { if (v !== undefined && v !== '') fd.append(k, v); });
+      return api.post('/courses', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    },
     onSuccess: () => { qc.invalidateQueries(['admin-courses']); toast.success('Đã thêm khóa học'); setModal(null); reset(); },
-    onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
+    onError: (e) => toast.error(e.response?.data?.error || JSON.stringify(e.response?.data?.errors?.[0]) || 'Lỗi'),
   });
 
   const updateMutation = useMutation({
@@ -49,18 +55,26 @@ export default function AdminCourses() {
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
   });
 
+  const courses = data?.data || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / LIMIT);
+
   const openEdit = (course) => {
     setModal(course);
     reset({
-      name: course.name,
-      description: course.description,
+      code: course.code,
+      name_vi: course.name_vi,
+      name_en: course.name_en,
+      description_vi: course.description_vi,
       category: course.category,
-      language_type: course.language_type,
+      language_type: course.language_type || '',
       start_date: course.start_date?.substring(0, 10),
       end_date: course.end_date?.substring(0, 10),
       tuition_fee: course.tuition_fee,
       max_students: course.max_students,
       schedule: course.schedule,
+      instructor_name: course.instructor_name,
+      location: course.location,
     });
   };
 
@@ -76,9 +90,9 @@ export default function AdminCourses() {
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>Quản lý khóa học</h1>
-          <p className={styles.pageSubtitle}>{data?.total || 0} khóa học</p>
+          <p className={styles.pageSubtitle}>{total} khóa học</p>
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setModal('create'); reset({}); }}>
+        <button className={styles.btnPrimary} onClick={() => { setModal('create'); reset({ category: 'foreign_language' }); }}>
           <Plus size={16} /> Thêm khóa học
         </button>
       </div>
@@ -88,6 +102,7 @@ export default function AdminCourses() {
           <table className={styles.table}>
             <thead>
               <tr>
+                <th>Mã</th>
                 <th>Tên khóa học</th>
                 <th>Loại</th>
                 <th>Thời gian</th>
@@ -97,11 +112,12 @@ export default function AdminCourses() {
               </tr>
             </thead>
             <tbody>
-              {data?.courses?.map(c => (
+              {courses.map(c => (
                 <tr key={c.id}>
+                  <td className={styles.sub}>{c.code}</td>
                   <td>
-                    <div className={styles.bold}>{c.name}</div>
-                    {c.language_type && <div className={styles.sub}>{LANGUAGES.find(l => l.value === c.language_type)?.label}</div>}
+                    <div className={styles.bold}>{c.name_vi}</div>
+                    {c.name_en && <div className={styles.sub}>{c.name_en}</div>}
                   </td>
                   <td><span className={styles.badge}>{c.category === 'foreign_language' ? 'Ngoại ngữ' : 'Tin học'}</span></td>
                   <td className={styles.sub}>
@@ -118,23 +134,24 @@ export default function AdminCourses() {
                   </td>
                 </tr>
               ))}
+              {!courses.length && (
+                <tr><td colSpan={7} className={styles.empty}>Chưa có khóa học nào</td></tr>
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
-        {data?.totalPages > 1 && (
+        {totalPages > 1 && (
           <div className={styles.pagination}>
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className={styles.pageBtn}>‹ Trước</button>
-            <span className={styles.pageInfo}>Trang {page}/{data.totalPages}</span>
-            <button disabled={page >= data.totalPages} onClick={() => setPage(p => p + 1)} className={styles.pageBtn}>Tiếp ›</button>
+            <span className={styles.pageInfo}>Trang {page}/{totalPages}</span>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className={styles.pageBtn}>Tiếp ›</button>
           </div>
         )}
       </div>
 
-      {/* Create/Edit Modal */}
       {modal && (
-        <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-label={modal === 'create' ? 'Thêm khóa học' : 'Sửa khóa học'}>
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true">
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>{modal === 'create' ? 'Thêm khóa học mới' : 'Chỉnh sửa khóa học'}</h2>
@@ -142,10 +159,24 @@ export default function AdminCourses() {
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
               <div className={styles.field}>
-                <label className={styles.label}>Tên khóa học *</label>
-                <input className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
-                  {...register('name', { required: 'Bắt buộc' })} />
-                {errors.name && <p className={styles.error}>{errors.name.message}</p>}
+                <label className={styles.label}>Mã khóa học *</label>
+                <input className={`${styles.input} ${errors.code ? styles.inputError : ''}`}
+                  placeholder="VD: TA001" {...register('code', { required: 'Bắt buộc' })} />
+                {errors.code && <p className={styles.error}>{errors.code.message}</p>}
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Tên khóa học (Tiếng Việt) *</label>
+                <input className={`${styles.input} ${errors.name_vi ? styles.inputError : ''}`}
+                  {...register('name_vi', { required: 'Bắt buộc' })} />
+                {errors.name_vi && <p className={styles.error}>{errors.name_vi.message}</p>}
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Tên khóa học (Tiếng Anh) *</label>
+                <input className={`${styles.input} ${errors.name_en ? styles.inputError : ''}`}
+                  {...register('name_en', { required: 'Bắt buộc' })} />
+                {errors.name_en && <p className={styles.error}>{errors.name_en.message}</p>}
               </div>
 
               <div className={styles.formRow}>
@@ -186,6 +217,17 @@ export default function AdminCourses() {
                 </div>
               </div>
 
+              <div className={styles.formRow}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Giảng viên</label>
+                  <input className={styles.input} {...register('instructor_name')} />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Địa điểm</label>
+                  <input className={styles.input} {...register('location')} />
+                </div>
+              </div>
+
               <div className={styles.field}>
                 <label className={styles.label}>Lịch học</label>
                 <input className={styles.input} placeholder="VD: Thứ 2-4-6, 18:00–20:00" {...register('schedule')} />
@@ -193,14 +235,14 @@ export default function AdminCourses() {
 
               <div className={styles.field}>
                 <label className={styles.label}>Mô tả</label>
-                <textarea className={`${styles.input} ${styles.textarea}`} rows={3} {...register('description')} />
+                <textarea className={`${styles.input} ${styles.textarea}`} rows={3} {...register('description_vi')} />
               </div>
 
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnSecondary} onClick={() => setModal(null)}>Hủy</button>
                 <button type="submit" className={styles.btnPrimary}
-                  disabled={createMutation.isLoading || updateMutation.isLoading}>
-                  {createMutation.isLoading || updateMutation.isLoading ? 'Đang lưu...' : 'Lưu'}
+                  disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? 'Đang lưu...' : 'Lưu'}
                 </button>
               </div>
             </form>
@@ -208,7 +250,6 @@ export default function AdminCourses() {
         </div>
       )}
 
-      {/* Delete confirm */}
       {deleteId && (
         <div className={styles.modalOverlay} role="dialog" aria-modal="true">
           <div className={styles.modal} style={{ maxWidth: 400 }}>
@@ -222,8 +263,8 @@ export default function AdminCourses() {
             <div className={styles.modalActions}>
               <button className={styles.btnSecondary} onClick={() => setDeleteId(null)}>Hủy</button>
               <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(deleteId)}
-                disabled={deleteMutation.isLoading}>
-                {deleteMutation.isLoading ? 'Đang xóa...' : 'Xóa'}
+                disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa'}
               </button>
             </div>
           </div>

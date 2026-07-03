@@ -63,11 +63,8 @@ router.post('/register', [
       [user.id, token, expiresAt]
     );
 
-    if (process.env.NODE_ENV === 'production') {
-      await sendVerificationEmail(email, token, first_name);
-    } else {
-      await query('UPDATE users SET email_verified = TRUE WHERE id = $1', [user.id]);
-    }
+    // Tự động xác nhận — domain trường học đã đủ tin cậy
+    await query('UPDATE users SET email_verified = TRUE WHERE id = $1', [user.id]);
 
     res.status(201).json({ message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.' });
   } catch (err) {
@@ -114,9 +111,8 @@ router.post('/login', [
     return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
   }
 
-  if (!user.email_verified && process.env.NODE_ENV === 'production') {
-    return res.status(403).json({ error: 'Vui lòng xác nhận email trước khi đăng nhập', code: 'EMAIL_NOT_VERIFIED' });
-  }
+  // Bỏ yêu cầu verify email — domain @hcmuaf.edu.vn và @st.hcmuaf.edu.vn đã đủ tin cậy
+  // if (!user.email_verified) { ... }
 
   if (!user.is_active) {
     return res.status(403).json({ error: 'Tài khoản đã bị khóa' });

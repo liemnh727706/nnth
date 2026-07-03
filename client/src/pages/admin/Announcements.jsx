@@ -14,21 +14,28 @@ const CATEGORY_OPTIONS = [
   { value: 'schedule', label: 'Lịch học' },
 ];
 
+const LIMIT = 20;
+
 export default function AdminAnnouncements() {
   const qc = useQueryClient();
   const [modal, setModal] = useState(null);
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
 
-  const { data, isLoading } = useQuery({
+  const { data: rawData, isLoading } = useQuery({
     queryKey: ['admin-announcements', page],
-    queryFn: () => api.get(`/announcements?page=${page}&limit=20`).then(r => r.data),
+    queryFn: () => api.get(`/announcements?page=${page}&limit=${LIMIT}`).then(r => r.data),
   });
+
+  // Server trả về array trực tiếp
+  const announcements = Array.isArray(rawData) ? rawData : (rawData?.data || []);
+  const total = rawData?.total || announcements.length;
+  const totalPages = Math.ceil(total / LIMIT);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   const createMutation = useMutation({
-    mutationFn: (body) => api.post('/announcements', body),
+    mutationFn: (body) => api.post('/announcements', { ...body, publish_now: true }),
     onSuccess: () => { qc.invalidateQueries(['admin-announcements']); toast.success('Đã đăng thông báo'); setModal(null); reset(); },
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
   });
@@ -47,12 +54,19 @@ export default function AdminAnnouncements() {
 
   const openEdit = (item) => {
     setModal(item);
-    reset({ title: item.title, content: item.content, category: item.category, is_pinned: item.is_pinned });
+    reset({
+      title_vi: item.title_vi,
+      title_en: item.title_en || '',
+      content_vi: item.content_vi,
+      content_en: item.content_en || '',
+      category: item.category,
+      is_pinned: item.is_pinned,
+    });
   };
 
   const onSubmit = (data) => {
     if (modal === 'create') createMutation.mutate(data);
-    else updateMutation.mutate({ id: modal.id, ...data });
+    else updateMutation.mutate({ id: modal.id, ...data, published_at: modal.published_at || new Date().toISOString() });
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -62,9 +76,9 @@ export default function AdminAnnouncements() {
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>Thông báo</h1>
-          <p className={styles.pageSubtitle}>{data?.total || 0} thông báo</p>
+          <p className={styles.pageSubtitle}>{total} thông báo</p>
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setModal('create'); reset({ category: 'general' }); }}>
+        <button className={styles.btnPrimary} onClick={() => { setModal('create'); reset({ category: 'general', is_pinned: false }); }}>
           <Plus size={16} /> Thêm thông báo
         </button>
       </div>
@@ -82,12 +96,12 @@ export default function AdminAnnouncements() {
               </tr>
             </thead>
             <tbody>
-              {data?.announcements?.map(a => (
+              {announcements.map(a => (
                 <tr key={a.id}>
-                  <td className={styles.bold}>{a.title}</td>
+                  <td className={styles.bold}>{a.title_vi}</td>
                   <td><span className={styles.badge}>{CATEGORY_OPTIONS.find(c => c.value === a.category)?.label || a.category}</span></td>
                   <td>{a.is_pinned ? '📌 Ghim' : '—'}</td>
-                  <td className={styles.sub}>{new Date(a.created_at).toLocaleDateString('vi-VN')}</td>
+                  <td className={styles.sub}>{new Date(a.published_at || a.created_at).toLocaleDateString('vi-VN')}</td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.iconBtn} onClick={() => openEdit(a)} aria-label="Sửa"><Edit2 size={15} /></button>
@@ -96,23 +110,22 @@ export default function AdminAnnouncements() {
                   </td>
                 </tr>
               ))}
-              {!data?.announcements?.length && (
+              {!announcements.length && (
                 <tr><td colSpan={5} className={styles.empty}>Chưa có thông báo</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
-        {data?.totalPages > 1 && (
+        {totalPages > 1 && (
           <div className={styles.pagination}>
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className={styles.pageBtn}>‹ Trước</button>
-            <span className={styles.pageInfo}>Trang {page}/{data.totalPages}</span>
-            <button disabled={page >= data.totalPages} onClick={() => setPage(p => p + 1)} className={styles.pageBtn}>Tiếp ›</button>
+            <span className={styles.pageInfo}>Trang {page}/{totalPages}</span>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className={styles.pageBtn}>Tiếp ›</button>
           </div>
         )}
       </div>
 
-      {/* Modal */}
       {modal && (
         <div className={styles.modalOverlay} role="dialog" aria-modal="true">
           <div className={styles.modal}>
@@ -122,10 +135,15 @@ export default function AdminAnnouncements() {
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
               <div className={styles.field}>
-                <label className={styles.label}>Tiêu đề *</label>
-                <input className={`${styles.input} ${errors.title ? styles.inputError : ''}`}
-                  {...register('title', { required: 'Bắt buộc' })} />
-                {errors.title && <p className={styles.error}>{errors.title.message}</p>}
+                <label className={styles.label}>Tiêu đề (Tiếng Việt) *</label>
+                <input className={`${styles.input} ${errors.title_vi ? styles.inputError : ''}`}
+                  {...register('title_vi', { required: 'Bắt buộc' })} />
+                {errors.title_vi && <p className={styles.error}>{errors.title_vi.message}</p>}
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Tiêu đề (Tiếng Anh)</label>
+                <input className={styles.input} {...register('title_en')} />
               </div>
 
               <div className={styles.formRow}>
@@ -144,20 +162,20 @@ export default function AdminAnnouncements() {
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label}>Nội dung *</label>
+                <label className={styles.label}>Nội dung (Tiếng Việt) *</label>
                 <textarea
-                  className={`${styles.input} ${styles.textarea} ${errors.content ? styles.inputError : ''}`}
+                  className={`${styles.input} ${styles.textarea} ${errors.content_vi ? styles.inputError : ''}`}
                   rows={8}
-                  {...register('content', { required: 'Nội dung là bắt buộc' })}
+                  {...register('content_vi', { required: 'Nội dung là bắt buộc' })}
                 />
-                {errors.content && <p className={styles.error}>{errors.content.message}</p>}
+                {errors.content_vi && <p className={styles.error}>{errors.content_vi.message}</p>}
               </div>
 
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnSecondary} onClick={() => setModal(null)}>Hủy</button>
                 <button type="submit" className={styles.btnPrimary}
-                  disabled={createMutation.isLoading || updateMutation.isLoading}>
-                  {createMutation.isLoading || updateMutation.isLoading ? 'Đang lưu...' : 'Lưu'}
+                  disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? 'Đang lưu...' : 'Lưu & Đăng'}
                 </button>
               </div>
             </form>
@@ -175,8 +193,8 @@ export default function AdminAnnouncements() {
             <p style={{ padding: 'var(--space-5)', color: 'var(--color-muted-text)' }}>Bạn có chắc muốn xóa thông báo này?</p>
             <div className={styles.modalActions}>
               <button className={styles.btnSecondary} onClick={() => setDeleteId(null)}>Hủy</button>
-              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(deleteId)} disabled={deleteMutation.isLoading}>
-                {deleteMutation.isLoading ? 'Đang xóa...' : 'Xóa'}
+              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(deleteId)} disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa'}
               </button>
             </div>
           </div>

@@ -14,18 +14,21 @@ router.get('/', async (req, res) => {
 
   const wc = `WHERE ${where.join(' AND ')}`;
 
-  const result = await query(
-    `SELECT a.*, u.first_name || ' ' || u.last_name AS author, c.name_vi AS course_name
-     FROM announcements a
-     JOIN users u ON u.id = a.created_by
-     LEFT JOIN courses c ON c.id = a.course_id
-     ${wc}
-     ORDER BY a.is_pinned DESC, a.published_at DESC
-     LIMIT $${pi} OFFSET $${pi + 1}`,
-    [...params, parseInt(limit), offset]
-  );
+  const [result, countResult] = await Promise.all([
+    query(
+      `SELECT a.*, u.first_name || ' ' || u.last_name AS author, c.name_vi AS course_name
+       FROM announcements a
+       JOIN users u ON u.id = a.created_by
+       LEFT JOIN courses c ON c.id = a.course_id
+       ${wc}
+       ORDER BY a.is_pinned DESC, a.published_at DESC
+       LIMIT $${pi} OFFSET $${pi + 1}`,
+      [...params, parseInt(limit), offset]
+    ),
+    query(`SELECT COUNT(*) FROM announcements a ${wc}`, params),
+  ]);
 
-  res.json(result.rows);
+  res.json({ data: result.rows, total: parseInt(countResult.rows[0].count), page: parseInt(page), limit: parseInt(limit) });
 });
 
 // GET /api/announcements/:id
