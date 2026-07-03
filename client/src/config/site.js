@@ -10,7 +10,7 @@
  *           'image' → dùng file ảnh (logoImageUrl)
  */
 export const SITE = {
-  name: 'Trung tâm Ngoại ngữ & Tin học',
+  name: 'Trung tâm Ngoại ngữ - Tin học',
   shortName: 'NNTH',
   parentOrg: 'Đại học Nông Lâm TP.HCM',
   tagline: 'Nâng cao năng lực ngôn ngữ và công nghệ thông tin cho sinh viên và cán bộ',
