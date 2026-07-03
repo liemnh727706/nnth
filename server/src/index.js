@@ -19,6 +19,9 @@ app.set('trust proxy', 1);
 // Security headers
 app.use(helmet());
 
+// Chạy sau nginx reverse proxy — tin header X-Forwarded-For để phân biệt IP người dùng
+app.set('trust proxy', 1);
+
 // CORS
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
@@ -35,8 +38,8 @@ app.use('/api/', rateLimit({
 
 app.use('/api/auth/', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Too many auth requests, please try again later.' },
+  max: 100,
+  message: { error: 'Quá nhiều yêu cầu đăng nhập. Vui lòng thử lại sau ít phút.' },
 }));
 
 // Body parsing
