@@ -14,6 +14,7 @@ const CATEGORY_OPTS = [
 
 const LANGUAGE_OPTS = [
   { value: '', label: 'Tất cả ngôn ngữ' },
+  { value: 'vietnamese', label: 'Tiếng Việt' },
   { value: 'english', label: 'Tiếng Anh' },
   { value: 'japanese', label: 'Tiếng Nhật' },
   { value: 'chinese', label: 'Tiếng Trung' },
@@ -25,6 +26,13 @@ const STATUS_OPTS = [
   { value: 'open', label: 'Đang chiêu sinh' },
   { value: 'upcoming', label: 'Sắp khai giảng' },
   { value: 'closed', label: 'Đã đóng' },
+];
+
+const DELIVERY_OPTS = [
+  { value: '', label: 'Hình thức học' },
+  { value: 'offline', label: 'Offline' },
+  { value: 'online', label: 'Online' },
+  { value: 'hybrid', label: 'Kết hợp' },
 ];
 
 /* ── Reusable dropdown component ───────────────────── */
@@ -101,6 +109,7 @@ export default function Courses() {
   const category = searchParams.get('category') || '';
   const language = searchParams.get('language') || '';
   const status = searchParams.get('status') || '';
+  const delivery = searchParams.get('delivery') || '';
 
   const setFilter = (key, value) => {
     const params = new URLSearchParams(searchParams);
@@ -123,13 +132,13 @@ export default function Courses() {
     setPage(1);
   };
 
-  const hasFilters = category || language || status || search;
+  const hasFilters = category || language || status || delivery || search;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['courses', page, category, language, status, search],
+    queryKey: ['courses', page, category, language, status, delivery, search],
     queryFn: () =>
       api.get(`/courses`, {
-        params: { page, limit: 15, category, language_type: language, status, search },
+        params: { page, limit: 15, category, language_type: language, status, delivery_mode: delivery, search },
       }).then(r => r.data),
     keepPreviousData: true,
   });
@@ -191,6 +200,12 @@ export default function Courses() {
               options={STATUS_OPTS}
               value={status}
               onChange={v => setFilter('status', v)}
+            />
+            <FilterDropdown
+              label="Hình thức học"
+              options={DELIVERY_OPTS}
+              value={delivery}
+              onChange={v => setFilter('delivery', v)}
             />
           </div>
 

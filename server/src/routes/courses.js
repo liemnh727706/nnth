@@ -31,6 +31,7 @@ router.get('/', [
 
   if (category) { where.push(`c.category = $${pi++}`); params.push(category); }
   if (language) { where.push(`c.language_type = $${pi++}`); params.push(language); }
+  if (req.query.delivery_mode) { where.push(`c.delivery_mode = $${pi++}`); params.push(req.query.delivery_mode); }
   if (search) {
     where.push(`(unaccent(c.name_vi) ILIKE unaccent($${pi}) OR unaccent(c.name_en) ILIKE unaccent($${pi}))`);
     params.push(`%${search}%`); pi++;
@@ -88,7 +89,7 @@ router.post('/', authenticate, requireAdmin, upload.single('thumbnail'), [
   const {
     code, name_vi, name_en, description_vi, description_en, category, language_type,
     level, duration_hours, tuition_fee, max_students, instructor_name, location,
-    start_date, end_date, schedule,
+    start_date, end_date, schedule, delivery_mode,
   } = req.body;
 
   const thumbnail_url = req.file ? `/uploads/courses/${req.file.filename}` : null;
@@ -96,11 +97,11 @@ router.post('/', authenticate, requireAdmin, upload.single('thumbnail'), [
   const result = await query(
     `INSERT INTO courses (code, name_vi, name_en, description_vi, description_en, category, language_type,
       level, duration_hours, tuition_fee, max_students, instructor_name, location, start_date, end_date,
-      schedule, thumbnail_url, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+      schedule, thumbnail_url, delivery_mode, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
     [code, name_vi, name_en, description_vi, description_en, category, language_type || null,
      level, duration_hours, tuition_fee, max_students, instructor_name, location,
-     start_date, end_date, schedule, thumbnail_url, req.user.id]
+     start_date, end_date, schedule, thumbnail_url, delivery_mode || 'offline', req.user.id]
   );
 
   res.status(201).json(result.rows[0]);
@@ -110,7 +111,7 @@ router.post('/', authenticate, requireAdmin, upload.single('thumbnail'), [
 router.put('/:id', authenticate, requireAdmin, async (req, res) => {
   const fields = ['name_vi', 'name_en', 'description_vi', 'description_en', 'tuition_fee',
                   'max_students', 'instructor_name', 'location', 'start_date', 'end_date',
-                  'schedule', 'is_active', 'level'];
+                  'schedule', 'is_active', 'level', 'delivery_mode', 'language_type'];
   const updates = [];
   const params = [];
   let pi = 1;

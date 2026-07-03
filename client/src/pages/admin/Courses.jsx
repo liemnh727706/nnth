@@ -12,10 +12,17 @@ const CATEGORIES = [
   { value: 'informatics', label: 'Tin học' },
 ];
 const LANGUAGES = [
+  { value: 'vietnamese', label: 'Tiếng Việt' },
   { value: 'english', label: 'Tiếng Anh' },
   { value: 'japanese', label: 'Tiếng Nhật' },
   { value: 'chinese', label: 'Tiếng Trung' },
   { value: 'korean', label: 'Tiếng Hàn' },
+];
+
+const DELIVERY_MODES = [
+  { value: 'offline', label: 'Offline (Tại lớp)' },
+  { value: 'online', label: 'Online' },
+  { value: 'hybrid', label: 'Kết hợp (Online + Offline)' },
 ];
 
 const LIMIT = 20;
@@ -68,6 +75,7 @@ export default function AdminCourses() {
       description_vi: course.description_vi,
       category: course.category,
       language_type: course.language_type || '',
+      delivery_mode: course.delivery_mode || 'offline',
       start_date: course.start_date?.substring(0, 10),
       end_date: course.end_date?.substring(0, 10),
       tuition_fee: course.tuition_fee,
@@ -193,6 +201,13 @@ export default function AdminCourses() {
                     {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                   </select>
                 </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Hình thức học *</label>
+                <select className={styles.input} {...register('delivery_mode', { required: true })}>
+                  {DELIVERY_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
               </div>
 
               <div className={styles.formRow}>
