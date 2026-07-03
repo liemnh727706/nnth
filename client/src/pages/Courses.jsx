@@ -134,9 +134,9 @@ export default function Courses() {
     keepPreviousData: true,
   });
 
-  const courses = data?.courses || [];
+  const courses = data?.data || [];
   const total = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
+  const totalPages = Math.ceil(total / 15) || 1;
 
   const catLabel = (c) =>
     c === 'foreign_language' ? 'Ngoại ngữ' : c === 'informatics' ? 'Tin học' : '—';
