@@ -17,10 +17,12 @@ export default function Announcements() {
   const [category, setCategory] = useState('');
   const [selected, setSelected] = useState(null);
 
-  const { data, isLoading } = useQuery({
+  const { data: rawData, isLoading } = useQuery({
     queryKey: ['announcements', category],
     queryFn: () => api.get(`/announcements?category=${category}&limit=50`).then(r => r.data),
   });
+
+  const announcements = rawData?.data || (Array.isArray(rawData) ? rawData : []);
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -37,17 +39,17 @@ export default function Announcements() {
           ))}
         </div>
 
-        {data?.announcements?.length ? (
+        {announcements.length ? (
           <div className={styles.list}>
-            {data.announcements.map(a => (
+            {announcements.map(a => (
               <article key={a.id} className={`${styles.item} ${a.is_pinned ? styles.pinned : ''}`} onClick={() => setSelected(a)}>
                 {a.is_pinned && <div className={styles.pinLabel}><Pin size={13} /> Ghim</div>}
                 <div className={styles.itemMeta}>
                   <span className={styles.category}>{CATEGORIES.find(c => c.value === a.category)?.label || a.category}</span>
-                  <span className={styles.date}>{new Date(a.created_at).toLocaleDateString('vi-VN')}</span>
+                  <span className={styles.date}>{new Date(a.published_at || a.created_at).toLocaleDateString('vi-VN')}</span>
                 </div>
-                <h2 className={styles.itemTitle}>{a.title}</h2>
-                <p className={styles.itemPreview}>{a.content.substring(0, 200)}{a.content.length > 200 ? '...' : ''}</p>
+                <h2 className={styles.itemTitle}>{a.title_vi}</h2>
+                <p className={styles.itemPreview}>{(a.content_vi || '').substring(0, 200)}{(a.content_vi || '').length > 200 ? '...' : ''}</p>
               </article>
             ))}
           </div>
@@ -62,10 +64,10 @@ export default function Announcements() {
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalMeta}>
               <span className={styles.category}>{CATEGORIES.find(c => c.value === selected.category)?.label}</span>
-              <span className={styles.date}>{new Date(selected.created_at).toLocaleDateString('vi-VN')}</span>
+              <span className={styles.date}>{new Date(selected.published_at || selected.created_at).toLocaleDateString('vi-VN')}</span>
             </div>
-            <h2 className={styles.modalTitle}>{selected.title}</h2>
-            <div className={styles.modalContent}>{selected.content}</div>
+            <h2 className={styles.modalTitle}>{selected.title_vi}</h2>
+            <div className={styles.modalContent}>{selected.content_vi}</div>
             <button className={styles.closeBtn} onClick={() => setSelected(null)}>Đóng</button>
           </div>
         </div>

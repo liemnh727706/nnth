@@ -93,8 +93,9 @@ export const NAV_ITEMS = [
     to: '/courses?category=informatics',
     children: [
       { label: 'Tin học văn phòng', to: '/courses?category=informatics' },
-      { label: 'Chứng chỉ IC3', to: '/courses?category=informatics&cert=ic3' },
-      { label: 'Chứng chỉ MOS', to: '/courses?category=informatics&cert=mos' },
+      { label: 'Chuẩn đầu ra', to: '/courses?category=informatics&search=CĐR' },
+      { label: 'Chứng chỉ IC3', to: '/courses?category=informatics&search=IC3' },
+      { label: 'Chứng chỉ MOS', to: '/courses?category=informatics&search=MOS' },
     ],
   },
   {

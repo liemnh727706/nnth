@@ -111,6 +111,14 @@ export default function Courses() {
   const status = searchParams.get('status') || '';
   const delivery = searchParams.get('delivery') || '';
 
+  // Đồng bộ khi URL thay đổi từ menu điều hướng (component đã mount sẵn)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    setSearch(urlSearch);
+    setInputVal(urlSearch);
+    setPage(1);
+  }, [searchParams]);
+
   const setFilter = (key, value) => {
     const params = new URLSearchParams(searchParams);
     if (value) params.set(key, value);
