@@ -106,6 +106,30 @@ router.patch('/users/:id/toggle-active', authenticate, requireSuperAdmin, async 
   res.json(result.rows[0]);
 });
 
+// DELETE /api/admin/users/:id - xóa tài khoản (super admin only)
+router.delete('/users/:id', authenticate, requireSuperAdmin, async (req, res) => {
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'Không thể tự xóa tài khoản của chính mình' });
+  }
+
+  // Không cho xóa nếu đã có ghi danh (giữ dữ liệu học vụ)
+  const enroll = await query('SELECT id FROM enrollments WHERE student_id = $1 LIMIT 1', [req.params.id]);
+  if (enroll.rows.length > 0) {
+    return res.status(409).json({ error: 'Không thể xóa: người dùng đã có ghi danh khóa học. Hãy dùng chức năng Khóa tài khoản.' });
+  }
+
+  try {
+    const result = await query('DELETE FROM users WHERE id = $1 RETURNING id, email', [req.params.id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'Đã xóa tài khoản', ...result.rows[0] });
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({ error: 'Không thể xóa: người dùng có dữ liệu liên quan (kết quả thi, khóa học, thông báo...). Hãy dùng chức năng Khóa tài khoản.' });
+    }
+    throw err;
+  }
+});
+
 // POST /api/admin/users - create staff account (super admin only)
 router.post('/users', authenticate, requireSuperAdmin, async (req, res) => {
   const bcrypt = require('bcryptjs');

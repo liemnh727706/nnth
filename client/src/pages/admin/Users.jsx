@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { Plus, ToggleLeft, ToggleRight, X, Search } from 'lucide-react';
+import { Plus, ToggleLeft, ToggleRight, X, Search, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './AdminPage.module.css';
@@ -15,6 +15,7 @@ export default function AdminUsers() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null); // user object
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search],
@@ -27,6 +28,12 @@ export default function AdminUsers() {
     mutationFn: (body) => api.post('/admin/users', body),
     onSuccess: () => { qc.invalidateQueries(['admin-users']); toast.success('Đã tạo tài khoản'); setModal(false); reset(); },
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/admin/users/${id}`),
+    onSuccess: () => { qc.invalidateQueries(['admin-users']); toast.success('Đã xóa tài khoản'); setDeleteTarget(null); },
+    onError: (e) => { toast.error(e.response?.data?.error || 'Lỗi'); setDeleteTarget(null); },
   });
 
   const toggleMutation = useMutation({
@@ -99,15 +106,25 @@ export default function AdminUsers() {
                   </td>
                   <td className={styles.sub}>{new Date(u.created_at).toLocaleDateString('vi-VN')}</td>
                   <td>
-                    <button
-                      className={styles.iconBtn}
-                      onClick={() => toggleMutation.mutate(u.id)}
-                      disabled={toggleMutation.isPending}
-                      title={u.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
-                      aria-label={u.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
-                    >
-                      {u.is_active ? <ToggleRight size={20} color="#059669" /> : <ToggleLeft size={20} />}
-                    </button>
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.iconBtn}
+                        onClick={() => toggleMutation.mutate(u.id)}
+                        disabled={toggleMutation.isPending}
+                        title={u.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
+                        aria-label={u.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
+                      >
+                        {u.is_active ? <ToggleRight size={20} color="#059669" /> : <ToggleLeft size={20} />}
+                      </button>
+                      <button
+                        className={`${styles.iconBtn} ${styles.danger}`}
+                        onClick={() => setDeleteTarget(u)}
+                        title="Xóa tài khoản"
+                        aria-label="Xóa tài khoản"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -126,6 +143,28 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true">
+          <div className={styles.modal} style={{ maxWidth: 420 }}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Xác nhận xóa tài khoản</h2>
+              <button className={styles.modalClose} onClick={() => setDeleteTarget(null)} aria-label="Đóng"><X size={20} /></button>
+            </div>
+            <p style={{ padding: 'var(--space-5)', color: 'var(--color-muted-text)' }}>
+              Xóa vĩnh viễn tài khoản <strong>{deleteTarget.last_name} {deleteTarget.first_name}</strong> ({deleteTarget.email})?
+              Hành động này không thể hoàn tác. Nếu người dùng đã có ghi danh, hãy dùng chức năng Khóa tài khoản thay thế.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={styles.btnSecondary} onClick={() => setDeleteTarget(null)}>Hủy</button>
+              <button className={styles.btnDanger} onClick={() => deleteMutation.mutate(deleteTarget.id)}
+                disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div className={styles.modalOverlay} role="dialog" aria-modal="true">
