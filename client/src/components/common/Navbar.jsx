@@ -3,10 +3,12 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Search, ChevronDown, Menu, X, Globe, User, LogOut, LayoutDashboard } from 'lucide-react';
-import { SITE, NAV_ITEMS, COLORS } from '../../config/site';
+import { COLORS } from '../../config/site';
+import { useSiteConfig } from '../../context/SiteConfigContext';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
+  const { SITE, NAV_ITEMS } = useSiteConfig();
   const { i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();

@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { AuthProvider } from './context/AuthContext';
+import { SiteConfigProvider } from './context/SiteConfigContext';
 import Layout from './components/common/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -31,6 +32,7 @@ const AdminPayments = lazy(() => import('./pages/admin/Payments'));
 const AdminExamResults = lazy(() => import('./pages/admin/ExamResults'));
 const AdminAnnouncements = lazy(() => import('./pages/admin/Announcements'));
 const AdminUsers = lazy(() => import('./pages/admin/Users'));
+const AdminSiteContent = lazy(() => import('./pages/admin/SiteContent'));
 
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -79,6 +81,7 @@ function AppRoutes() {
           <Route path="exam-results" element={<AdminExamResults />} />
           <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="users" element={<PrivateRoute roles={['super_admin']}><AdminUsers /></PrivateRoute>} />
+          <Route path="site-content" element={<PrivateRoute roles={['super_admin']}><AdminSiteContent /></PrivateRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -95,9 +98,11 @@ function ThemeProvider({ children }) {
 export default function App() {
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <AppRoutes />
-      </ThemeProvider>
+      <SiteConfigProvider>
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
+      </SiteConfigProvider>
     </AuthProvider>
   );
 }

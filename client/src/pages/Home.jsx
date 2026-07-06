@@ -7,12 +7,14 @@ import {
   Users, BookOpen, Award, Globe, Bell, Clock
 } from 'lucide-react';
 import api from '../utils/api';
-import { HERO, STATS, PROGRAMS, WHY_ITEMS, COLORS } from '../config/site';
+import { COLORS } from '../config/site';
+import { useSiteConfig } from '../context/SiteConfigContext';
 import styles from './Home.module.css';
 
 const ICON_MAP = { GraduationCap, FileText, Monitor, Star, Users, BookOpen, Award, Globe };
 
 export default function Home() {
+  const { HERO, STATS, PROGRAMS, WHY_ITEMS } = useSiteConfig();
   const navigate = useNavigate();
 
   const { data: coursesData } = useQuery({
@@ -25,8 +27,8 @@ export default function Home() {
     queryFn: () => api.get('/announcements?limit=4').then(r => r.data),
   });
 
-  const courses = coursesData?.courses || [];
-  const announcements = announcementsData?.announcements || [];
+  const courses = coursesData?.data || [];
+  const announcements = announcementsData?.data || [];
 
   const handleHeroSearch = (e) => {
     if (e.key === 'Enter' && e.target.value.trim()) {
@@ -165,7 +167,7 @@ export default function Home() {
                   <div className={styles.courseCardBadge} data-cat={c.category}>
                     {c.category === 'foreign_language' ? (c.language_name || 'Ngoại ngữ') : 'Tin học'}
                   </div>
-                  <h3 className={styles.courseCardTitle}>{c.name}</h3>
+                  <h3 className={styles.courseCardTitle}>{c.name_vi}</h3>
                   <p className={styles.courseCardDesc}>
                     {c.description?.slice(0, 100)}{c.description?.length > 100 ? '…' : ''}
                   </p>
@@ -250,9 +252,9 @@ export default function Home() {
                   <time className={styles.newsDate} dateTime={a.published_at || a.created_at}>
                     {new Date(a.published_at || a.created_at).toLocaleDateString('vi-VN')}
                   </time>
-                  <h3 className={styles.newsTitle}>{a.title}</h3>
+                  <h3 className={styles.newsTitle}>{a.title_vi}</h3>
                   <p className={styles.newsExcerpt}>
-                    {a.content?.slice(0, 120)}{a.content?.length > 120 ? '…' : ''}
+                    {a.content_vi?.slice(0, 120)}{a.content_vi?.length > 120 ? '…' : ''}
                   </p>
                   <Link to="/announcements" className={styles.newsReadMore}>
                     Xem chi tiết <ChevronRight size={14} aria-hidden="true" />

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, BookOpen, Users, CreditCard,
-  FileText, Megaphone, Menu, X, LogOut, ChevronRight,
+  FileText, Megaphone, Menu, X, LogOut, ChevronRight, Palette,
 } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 
@@ -23,7 +23,10 @@ export default function AdminLayout() {
     { to: '/admin/payments', label: t('admin.payments'), icon: CreditCard },
     { to: '/admin/exam-results', label: t('admin.exam_results'), icon: FileText },
     { to: '/admin/announcements', label: t('admin.announcements'), icon: Megaphone },
-    ...(isSuperAdmin ? [{ to: '/admin/users', label: t('admin.users'), icon: Users }] : []),
+    ...(isSuperAdmin ? [
+      { to: '/admin/users', label: t('admin.users'), icon: Users },
+      { to: '/admin/site-content', label: 'Nội dung website', icon: Palette },
+    ] : []),
   ];
 
   const handleLogout = async () => {

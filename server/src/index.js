@@ -61,6 +61,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/exam-results', require('./routes/examResults'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/site-settings', require('./routes/siteSettings'));
 
 // Health check
 app.get('/api/health', async (req, res) => {
