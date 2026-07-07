@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -12,6 +12,41 @@ import { useSiteConfig } from '../context/SiteConfigContext';
 import styles from './Home.module.css';
 
 const ICON_MAP = { GraduationCap, FileText, Monitor, Star, Users, BookOpen, Award, Globe };
+
+/* Nền slideshow tự chuyển ảnh (crossfade) — giống professional.mit.edu */
+function HeroSlideshow({ images, interval = 6000 }) {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (!images || images.length < 2) return;
+    const timer = setInterval(() => setCurrent(c => (c + 1) % images.length), interval);
+    return () => clearInterval(timer);
+  }, [images, interval]);
+
+  if (!images?.length) return null;
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} aria-hidden="true">
+      {images.map((url, i) => (
+        <div key={i} style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${url})`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: i === current ? 1 : 0,
+          transition: 'opacity 1.8s ease-in-out',
+          transform: i === current ? 'scale(1.05)' : 'scale(1)',
+          transitionProperty: 'opacity, transform',
+          transitionDuration: '1.8s, 8s',
+        }} />
+      ))}
+      {/* Lớp phủ tối để chữ trắng dễ đọc trên ảnh */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(90deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.72) 45%, rgba(15,23,42,0.45) 100%)',
+      }} />
+    </div>
+  );
+}
 
 export default function Home() {
   const { HERO, STATS, PROGRAMS, WHY_ITEMS } = useSiteConfig();
@@ -42,12 +77,18 @@ export default function Home() {
       {/* ── HERO ─────────────────────────────────────── */}
       <section
         className={styles.hero}
-        style={HERO.backgroundType === 'image' && HERO.backgroundImage
-          ? { backgroundImage: `url(${HERO.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : { background: COLORS.primary }
-        }
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          ...(HERO.backgroundType === 'image' && HERO.backgroundImage
+            ? { backgroundImage: `url(${HERO.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+            : { background: COLORS.primary }),
+        }}
         aria-labelledby="hero-heading"
       >
+        {HERO.backgroundType === 'slideshow' && (
+          <HeroSlideshow images={HERO.backgroundImages} interval={HERO.slideshowInterval || 6000} />
+        )}
         <div className={styles.heroOverlay} aria-hidden="true" />
         <div className={styles.heroContainer}>
           <div className={styles.heroTag}>{HERO.tag}</div>

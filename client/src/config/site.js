@@ -122,8 +122,17 @@ export const HERO = {
   ctaSecondary: { label: 'Đăng ký học', to: '/register' },
   searchPlaceholder: 'Tìm kiếm khóa học, ngôn ngữ, lịch thi...',
 
-  backgroundType: 'gradient',   // 'gradient' | 'image'
-  backgroundImage: '',          // vd: 'https://images.unsplash.com/photo-...'
+  backgroundType: 'slideshow',  // 'gradient' | 'image' | 'slideshow'
+  backgroundImage: '',          // vd: 'https://images.unsplash.com/photo-...' (khi type='image')
+
+  // Slideshow: 2–5 ảnh tự chuyển (khi type='slideshow')
+  backgroundImages: [
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&q=80', // giảng đường
+    'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&q=80', // lớp học
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&q=80', // sinh viên học nhóm
+    'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1920&q=80', // giảng dạy
+  ],
+  slideshowInterval: 6000,      // ms giữa các lần chuyển ảnh
 };
 
 /* ── 6. HOMEPAGE — THỐNG KÊ ──────────────────────────────────────────*/

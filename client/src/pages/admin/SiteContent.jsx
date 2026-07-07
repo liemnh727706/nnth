@@ -185,12 +185,43 @@ export default function AdminSiteContent() {
             <select className={styles.input} value={config.HERO.backgroundType}
               onChange={e => set('HERO', 'backgroundType', e.target.value)}>
               <option value="gradient">Màu (mặc định)</option>
-              <option value="image">Ảnh nền</option>
+              <option value="image">Ảnh nền cố định</option>
+              <option value="slideshow">Slideshow (2–5 ảnh tự chuyển)</option>
             </select>
           </div>
         </div>
         {config.HERO.backgroundType === 'image' && (
           <ImageField label="Ảnh nền banner" value={config.HERO.backgroundImage} onChange={v => set('HERO', 'backgroundImage', v)} />
+        )}
+        {config.HERO.backgroundType === 'slideshow' && (
+          <>
+            {(config.HERO.backgroundImages || []).map((url, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <ImageField label={`Ảnh slideshow #${i + 1}`} value={url}
+                    onChange={v => set('HERO', 'backgroundImages',
+                      config.HERO.backgroundImages.map((u, j) => j === i ? v : u))} />
+                </div>
+                <button type="button" className={`${styles.iconBtn} ${styles.danger}`} style={{ marginBottom: 14 }}
+                  disabled={(config.HERO.backgroundImages || []).length <= 2}
+                  onClick={() => set('HERO', 'backgroundImages',
+                    config.HERO.backgroundImages.filter((_, j) => j !== i))}
+                  aria-label="Xóa ảnh"><Trash2 size={15} /></button>
+              </div>
+            ))}
+            {(config.HERO.backgroundImages || []).length < 5 && (
+              <button type="button" className={styles.btnSecondary}
+                onClick={() => set('HERO', 'backgroundImages', [...(config.HERO.backgroundImages || []), ''])}>
+                <Plus size={14} /> Thêm ảnh ({(config.HERO.backgroundImages || []).length}/5)
+              </button>
+            )}
+            <div className={styles.field} style={{ marginTop: 12, maxWidth: 260 }}>
+              <label className={styles.label}>Thời gian chuyển ảnh (giây)</label>
+              <input type="number" min="3" max="20" className={styles.input}
+                value={(config.HERO.slideshowInterval || 6000) / 1000}
+                onChange={e => set('HERO', 'slideshowInterval', Math.max(3, parseInt(e.target.value) || 6) * 1000)} />
+            </div>
+          </>
         )}
       </SectionCard>
 
