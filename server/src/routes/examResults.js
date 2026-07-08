@@ -95,15 +95,19 @@ router.post('/import', authenticate, requireAdmin, upload.single('file'), async 
     // Bỏ qua dòng ghi chú trong file mẫu
     if (mssv.startsWith('Lưu ý')) continue;
 
-    // Tìm sinh viên theo MSSV (student_code hoặc email trường) hoặc CCCD
+    // Tìm sinh viên theo MSSV (student_code hoặc email trường) hoặc CCCD.
+    // Excel thường cắt mất số 0 đầu của CCCD → so khớp thêm bản LPAD về 12 số.
     const user = await query(
       `SELECT id FROM users WHERE
          ($1 <> '' AND (student_code = $1 OR LOWER(email) = LOWER($1 || '@st.hcmuaf.edu.vn')))
-         OR ($2 <> '' AND id_number = $2)
+         OR ($2 <> '' AND (id_number = $2 OR id_number = LPAD($2, 12, '0')))
        LIMIT 1`,
       [mssv, idNumber]
     );
-    if (!user.rows[0]) { errors.push({ row: mssv || idNumber, error: 'Không tìm thấy sinh viên' }); continue; }
+    if (!user.rows[0]) {
+      errors.push({ row: mssv || idNumber, error: 'Không tìm thấy sinh viên trong hệ thống (cần tạo account trước — dùng Import Excel ở Manage Users)' });
+      continue;
+    }
 
     const theory = row['Điểm trắc nghiệm'] !== undefined && row['Điểm trắc nghiệm'] !== '' ? parseFloat(row['Điểm trắc nghiệm']) : null;
 

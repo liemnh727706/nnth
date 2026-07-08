@@ -73,8 +73,15 @@ export default function AdminExamResults() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const errCount = res.data.errors?.length || 0;
-      toast.success(`Import thành công ${res.data.imported} kết quả${errCount ? `, ${errCount} dòng lỗi` : ''}`);
-      if (errCount) console.warn('Import errors:', res.data.errors);
+      if (res.data.imported > 0) {
+        toast.success(`Import thành công ${res.data.imported} kết quả${errCount ? `, ${errCount} dòng lỗi` : ''}`);
+      } else {
+        toast.error(`Không import được dòng nào (${errCount} lỗi)`);
+      }
+      if (errCount) {
+        console.warn('Import errors:', res.data.errors);
+        toast.warn(`Lỗi đầu tiên: ${res.data.errors[0].row} — ${res.data.errors[0].error}`, { autoClose: 10000 });
+      }
       qc.invalidateQueries(['admin-exam-results']);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Import thất bại');
