@@ -1,7 +1,11 @@
 const router = require('express').Router();
 const XLSX = require('xlsx');
+const multer = require('multer');
+const bcrypt = require('bcryptjs');
 const { query } = require('../utils/db');
 const { authenticate, requireAdmin, requireSuperAdmin } = require('../middleware/auth');
+
+const excelUpload = multer({ dest: 'uploads/user-imports/', limits: { fileSize: 10 * 1024 * 1024 } });
 
 // GET /api/admin/dashboard
 router.get('/dashboard', authenticate, requireAdmin, async (req, res) => {
@@ -104,6 +108,101 @@ router.patch('/users/:id/toggle-active', authenticate, requireSuperAdmin, async 
   );
   if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
   res.json(result.rows[0]);
+});
+
+// GET /api/admin/users/template - file Excel mẫu tạo account hàng loạt
+router.get('/users/template', authenticate, requireSuperAdmin, (req, res) => {
+  const headers = ['Email', 'Họ', 'Tên', 'CCCD', 'MSSV', 'Ngày sinh', 'Nơi sinh', 'Điện thoại', 'Vai trò', 'Mật khẩu'];
+  const example = ['20130001@st.hcmuaf.edu.vn', 'Nguyễn Văn', 'An', '079203001234', '20130001', '15/03/2003', 'TP.HCM', '0901234567', 'student', ''];
+  const note = ['Vai trò: student hoặc staff. Mật khẩu bỏ trống sẽ tự đặt là Nnth@ + CCCD.', '', '', '', '', '', '', '', '', ''];
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, example, note]);
+  ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 16) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TaiKhoan');
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+  res.setHeader('Content-Disposition', 'attachment; filename="mau-tao-tai-khoan.xlsx"');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+});
+
+// POST /api/admin/users/import - tạo account hàng loạt từ Excel (super admin only)
+router.post('/users/import', authenticate, requireSuperAdmin, excelUpload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' });
+
+  const ext = req.file.originalname.split('.').pop().toLowerCase();
+  if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+    return res.status(400).json({ error: 'Chỉ hỗ trợ file Excel (.xlsx, .xls, .csv)' });
+  }
+
+  const workbook = XLSX.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  const created = [];
+  const errors = [];
+
+  // Chuyển 'dd/mm/yyyy' hoặc Excel serial date về yyyy-mm-dd
+  const parseDob = (v) => {
+    if (!v) return null;
+    if (typeof v === 'number') {
+      const d = XLSX.SSF.parse_date_code(v);
+      return d ? `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}` : null;
+    }
+    const m = String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    return String(v).match(/^\d{4}-\d{2}-\d{2}$/) ? v : null;
+  };
+
+  for (const row of rows) {
+    const email = String(row['Email'] || '').trim().toLowerCase();
+    const lastName = String(row['Họ'] || '').trim();
+    const firstName = String(row['Tên'] || '').trim();
+    const idNumber = String(row['CCCD'] || '').trim();
+    const studentCode = String(row['MSSV'] || '').trim();
+    const dob = parseDob(row['Ngày sinh']);
+    const pob = String(row['Nơi sinh'] || '').trim();
+    const phone = String(row['Điện thoại'] || '').trim();
+    const role = String(row['Vai trò'] || 'student').trim().toLowerCase();
+    let password = String(row['Mật khẩu'] || '').trim();
+
+    // Bỏ qua dòng ghi chú của file mẫu
+    if (email.startsWith('vai trò') || (!email && !idNumber)) continue;
+
+    if (!email || !email.includes('@')) { errors.push({ email: email || '(trống)', error: 'Email không hợp lệ' }); continue; }
+    if (!lastName || !firstName) { errors.push({ email, error: 'Thiếu Họ hoặc Tên' }); continue; }
+    if (!idNumber || !/^\d{9,12}$/.test(idNumber)) { errors.push({ email, error: 'CCCD phải gồm 9-12 chữ số' }); continue; }
+    if (!['student', 'staff'].includes(role)) { errors.push({ email, error: `Vai trò không hợp lệ: ${role}` }); continue; }
+
+    const domain = email.split('@')[1];
+    if (!['hcmuaf.edu.vn', 'st.hcmuaf.edu.vn'].includes(domain)) {
+      errors.push({ email, error: 'Email phải thuộc @hcmuaf.edu.vn hoặc @st.hcmuaf.edu.vn' });
+      continue;
+    }
+
+    if (!password) password = `Nnth@${idNumber}`;
+    if (password.length < 8) { errors.push({ email, error: 'Mật khẩu phải từ 8 ký tự' }); continue; }
+
+    try {
+      const existing = await query('SELECT id FROM users WHERE email = $1 OR id_number = $2', [email, idNumber]);
+      if (existing.rows.length > 0) { errors.push({ email, error: 'Email hoặc CCCD đã tồn tại' }); continue; }
+
+      const hash = await bcrypt.hash(password, 12);
+      await query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, id_number, student_code,
+           date_of_birth, place_of_birth, phone, role, email_verified)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE)`,
+        [email, hash, firstName, lastName, idNumber, studentCode || null,
+         dob, pob || null, phone || null, role]
+      );
+      created.push(email);
+    } catch (err) {
+      errors.push({ email, error: err.code === '23505' ? 'Trùng dữ liệu (email/CCCD/MSSV)' : 'Lỗi hệ thống' });
+    }
+  }
+
+  res.json({ created: created.length, errors });
 });
 
 // PATCH /api/admin/users/:id/role - đổi vai trò (super admin only)

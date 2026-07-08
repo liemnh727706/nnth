@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { Plus, ToggleLeft, ToggleRight, X, Search, Trash2 } from 'lucide-react';
+import { Plus, ToggleLeft, ToggleRight, X, Search, Trash2, Download, Upload } from 'lucide-react';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './AdminPage.module.css';
@@ -16,6 +16,45 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // user object
+  const [importing, setImporting] = useState(false);
+  const importRef = useRef(null);
+
+  const downloadTemplate = async () => {
+    try {
+      const res = await api.get('/admin/users/template', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mau-tao-tai-khoan.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Không tải được file mẫu');
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    setImporting(true);
+    try {
+      const res = await api.post('/admin/users/import', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const errCount = res.data.errors?.length || 0;
+      toast.success(`Đã tạo ${res.data.created} tài khoản${errCount ? `, ${errCount} dòng lỗi` : ''}`);
+      if (errCount) {
+        console.warn('Import errors:', res.data.errors);
+        toast.warn(res.data.errors.slice(0, 3).map(x => `${x.email}: ${x.error}`).join(' | '), { autoClose: 8000 });
+      }
+      qc.invalidateQueries(['admin-users']);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Import thất bại');
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search],
@@ -61,9 +100,18 @@ export default function AdminUsers() {
           <h1 className={styles.pageTitle}>Quản lý người dùng</h1>
           <p className={styles.pageSubtitle}>{total} tài khoản</p>
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setModal(true); reset({ role: 'staff' }); }}>
-          <Plus size={16} /> Tạo tài khoản nhân viên
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <button className={styles.btnSecondary} onClick={downloadTemplate}>
+            <Download size={16} /> Tải file mẫu
+          </button>
+          <button className={styles.btnSecondary} onClick={() => importRef.current?.click()} disabled={importing}>
+            <Upload size={16} /> {importing ? 'Đang import...' : 'Import Excel'}
+          </button>
+          <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImport} />
+          <button className={styles.btnPrimary} onClick={() => { setModal(true); reset({ role: 'staff' }); }}>
+            <Plus size={16} /> Tạo tài khoản nhân viên
+          </button>
+        </div>
       </div>
 
       <div className={styles.tableCard}>
