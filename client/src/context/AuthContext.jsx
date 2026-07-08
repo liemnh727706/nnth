@@ -98,7 +98,6 @@ export function AuthProvider({ children }) {
       ACTIVITY_EVENTS.forEach(ev => window.removeEventListener(ev, resetTimer));
       document.removeEventListener('visibilitychange', checkOnVisible);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (
