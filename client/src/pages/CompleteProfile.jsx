@@ -7,9 +7,12 @@ import api from '../utils/api';
 import styles from './Auth.module.css';
 
 // Đọc payload JWT (chỉ để hiển thị, server vẫn xác minh chữ ký)
+// Dùng TextDecoder để decode đúng UTF-8 (atob thuần làm hỏng tiếng Việt)
 function decodeJwt(token) {
   try {
-    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder('utf-8').decode(bytes));
   } catch {
     return null;
   }

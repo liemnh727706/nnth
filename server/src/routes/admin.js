@@ -106,6 +106,23 @@ router.patch('/users/:id/toggle-active', authenticate, requireSuperAdmin, async 
   res.json(result.rows[0]);
 });
 
+// PATCH /api/admin/users/:id/role - đổi vai trò (super admin only)
+router.patch('/users/:id/role', authenticate, requireSuperAdmin, async (req, res) => {
+  const { role } = req.body;
+  if (!['student', 'staff', 'super_admin'].includes(role)) {
+    return res.status(400).json({ error: 'Vai trò không hợp lệ' });
+  }
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'Không thể tự đổi vai trò của chính mình' });
+  }
+  const result = await query(
+    'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, email, role',
+    [role, req.params.id]
+  );
+  if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
+  res.json(result.rows[0]);
+});
+
 // DELETE /api/admin/users/:id - xóa tài khoản (super admin only)
 router.delete('/users/:id', authenticate, requireSuperAdmin, async (req, res) => {
   if (req.params.id === req.user.id) {

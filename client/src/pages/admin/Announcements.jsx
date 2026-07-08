@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Paperclip, FileText } from 'lucide-react';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './AdminPage.module.css';
@@ -21,6 +21,8 @@ export default function AdminAnnouncements() {
   const [modal, setModal] = useState(null);
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
+  const [newFiles, setNewFiles] = useState([]);          // File[] mới chọn
+  const [existingAtts, setExistingAtts] = useState([]);  // attachments giữ lại khi sửa
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ['admin-announcements', page],
@@ -34,15 +36,29 @@ export default function AdminAnnouncements() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
+  const buildFormData = (body, extra = {}) => {
+    const fd = new FormData();
+    Object.entries({ ...body, ...extra }).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) fd.append(k, v);
+    });
+    newFiles.forEach(f => fd.append('files', f));
+    return fd;
+  };
+
+  const closeModal = () => { setModal(null); reset(); setNewFiles([]); setExistingAtts([]); };
+
   const createMutation = useMutation({
-    mutationFn: (body) => api.post('/announcements', { ...body, publish_now: true }),
-    onSuccess: () => { qc.invalidateQueries(['admin-announcements']); toast.success('Đã đăng thông báo'); setModal(null); reset(); },
+    mutationFn: (body) => api.post('/announcements', buildFormData(body, { publish_now: true }),
+      { headers: { 'Content-Type': 'multipart/form-data' } }),
+    onSuccess: () => { qc.invalidateQueries(['admin-announcements']); toast.success('Đã đăng thông báo'); closeModal(); },
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...body }) => api.put(`/announcements/${id}`, body),
-    onSuccess: () => { qc.invalidateQueries(['admin-announcements']); toast.success('Đã cập nhật'); setModal(null); reset(); },
+    mutationFn: ({ id, ...body }) => api.put(`/announcements/${id}`,
+      buildFormData(body, { existing_attachments: JSON.stringify(existingAtts) }),
+      { headers: { 'Content-Type': 'multipart/form-data' } }),
+    onSuccess: () => { qc.invalidateQueries(['admin-announcements']); toast.success('Đã cập nhật'); closeModal(); },
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
   });
 
@@ -54,6 +70,8 @@ export default function AdminAnnouncements() {
 
   const openEdit = (item) => {
     setModal(item);
+    setNewFiles([]);
+    setExistingAtts(item.attachments || []);
     reset({
       title_vi: item.title_vi,
       title_en: item.title_en || '',
@@ -78,7 +96,7 @@ export default function AdminAnnouncements() {
           <h1 className={styles.pageTitle}>Thông báo</h1>
           <p className={styles.pageSubtitle}>{total} thông báo</p>
         </div>
-        <button className={styles.btnPrimary} onClick={() => { setModal('create'); reset({ category: 'general', is_pinned: false }); }}>
+        <button className={styles.btnPrimary} onClick={() => { setModal('create'); reset({ category: 'general', is_pinned: false }); setNewFiles([]); setExistingAtts([]); }}>
           <Plus size={16} /> Thêm thông báo
         </button>
       </div>
@@ -171,8 +189,42 @@ export default function AdminAnnouncements() {
                 {errors.content_vi && <p className={styles.error}>{errors.content_vi.message}</p>}
               </div>
 
+              {/* File đính kèm */}
+              <div className={styles.field}>
+                <label className={styles.label}><Paperclip size={13} /> File đính kèm (PDF, ảnh — tối đa 5 file, 10MB/file)</label>
+                {existingAtts.map((a, i) => (
+                  <div key={`old-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                    <FileText size={14} />
+                    <span style={{ flex: 1 }}>{a.name} ({a.type})</span>
+                    <button type="button" className={`${styles.iconBtn} ${styles.danger}`}
+                      onClick={() => setExistingAtts(atts => atts.filter((_, j) => j !== i))} aria-label="Gỡ file">
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+                {newFiles.map((f, i) => (
+                  <div key={`new-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13, color: '#059669' }}>
+                    <Paperclip size={14} />
+                    <span style={{ flex: 1 }}>{f.name} (mới)</span>
+                    <button type="button" className={`${styles.iconBtn} ${styles.danger}`}
+                      onClick={() => setNewFiles(files => files.filter((_, j) => j !== i))} aria-label="Gỡ file">
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+                {existingAtts.length + newFiles.length < 5 && (
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" multiple
+                    className={styles.input} style={{ padding: 8 }}
+                    onChange={e => {
+                      const files = Array.from(e.target.files || []);
+                      setNewFiles(prev => [...prev, ...files].slice(0, 5 - existingAtts.length));
+                      e.target.value = '';
+                    }} />
+                )}
+              </div>
+
               <div className={styles.modalActions}>
-                <button type="button" className={styles.btnSecondary} onClick={() => setModal(null)}>Hủy</button>
+                <button type="button" className={styles.btnSecondary} onClick={closeModal}>Hủy</button>
                 <button type="submit" className={styles.btnPrimary}
                   disabled={createMutation.isPending || updateMutation.isPending}>
                   {createMutation.isPending || updateMutation.isPending ? 'Đang lưu...' : 'Lưu & Đăng'}

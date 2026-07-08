@@ -42,6 +42,12 @@ export default function AdminUsers() {
     onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
   });
 
+  const roleMutation = useMutation({
+    mutationFn: ({ id, role }) => api.patch(`/admin/users/${id}/role`, { role }),
+    onSuccess: (res) => { qc.invalidateQueries(['admin-users']); toast.success(`Đã đổi vai trò thành ${ROLE_LABELS[res.data.role]}`); },
+    onError: (e) => toast.error(e.response?.data?.error || 'Lỗi'),
+  });
+
   const users = data?.data || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / LIMIT);
@@ -95,9 +101,22 @@ export default function AdminUsers() {
                   <td className={styles.sub}>{u.id_number || '—'}</td>
                   <td className={styles.sub}>{u.student_code || '—'}</td>
                   <td>
-                    <span className={`${styles.badge} ${u.role !== 'student' ? styles.badgeConfirmed : ''}`}>
-                      {ROLE_LABELS[u.role] || u.role}
-                    </span>
+                    <select
+                      value={u.role}
+                      disabled={roleMutation.isPending}
+                      onChange={e => {
+                        const role = e.target.value;
+                        if (role !== u.role && window.confirm(`Đổi vai trò của ${u.email} thành ${ROLE_LABELS[role]}?`)) {
+                          roleMutation.mutate({ id: u.id, role });
+                        } else {
+                          e.target.value = u.role;
+                        }
+                      }}
+                      style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, cursor: 'pointer' }}
+                      aria-label="Đổi vai trò"
+                    >
+                      {Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
                   </td>
                   <td>
                     <span className={u.is_active ? styles.badgeConfirmed : styles.badgeCancelled}>

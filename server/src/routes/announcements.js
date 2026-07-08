@@ -1,6 +1,34 @@
 const router = require('express').Router();
+const multer = require('multer');
+const path = require('path');
+const crypto = require('crypto');
+const fs = require('fs');
 const { query } = require('../utils/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
+
+fs.mkdirSync('uploads/announcements', { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: 'uploads/announcements/',
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024, files: 5 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    cb(null, allowed.includes(path.extname(file.originalname).toLowerCase()));
+  },
+});
+
+// Chuyển req.files thành mảng attachments [{url, name, type}]
+const filesToAttachments = (files = []) => files.map(f => ({
+  url: `/uploads/announcements/${f.filename}`,
+  name: Buffer.from(f.originalname, 'latin1').toString('utf8'), // giữ đúng tên tiếng Việt
+  type: path.extname(f.originalname).toLowerCase() === '.pdf' ? 'pdf' : 'image',
+}));
 
 // GET /api/announcements - public
 router.get('/', async (req, res) => {
@@ -43,26 +71,36 @@ router.get('/:id', async (req, res) => {
   res.json(result.rows[0]);
 });
 
-// POST /api/announcements - admin
-router.post('/', authenticate, requireAdmin, async (req, res) => {
+// POST /api/announcements - admin (multipart: fields + files[])
+router.post('/', authenticate, requireAdmin, upload.array('files', 5), async (req, res) => {
   const { title_vi, title_en, content_vi, content_en, category, course_id, is_pinned, publish_now } = req.body;
+  const attachments = filesToAttachments(req.files);
 
   const result = await query(
-    `INSERT INTO announcements (title_vi, title_en, content_vi, content_en, category, course_id, is_pinned, published_at, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+    `INSERT INTO announcements (title_vi, title_en, content_vi, content_en, category, course_id, is_pinned, published_at, created_by, attachments)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
     [title_vi, title_en || null, content_vi, content_en || null, category || 'general',
-     course_id || null, is_pinned || false, publish_now ? new Date() : null, req.user.id]
+     course_id || null, is_pinned === 'true' || is_pinned === true,
+     (publish_now === 'true' || publish_now === true) ? new Date() : null, req.user.id,
+     JSON.stringify(attachments)]
   );
   res.status(201).json(result.rows[0]);
 });
 
-// PUT /api/announcements/:id
-router.put('/:id', authenticate, requireAdmin, async (req, res) => {
-  const { title_vi, title_en, content_vi, content_en, is_pinned, published_at } = req.body;
+// PUT /api/announcements/:id — giữ file cũ (existing_attachments JSON) + thêm file mới
+router.put('/:id', authenticate, requireAdmin, upload.array('files', 5), async (req, res) => {
+  const { title_vi, title_en, content_vi, content_en, is_pinned, published_at, existing_attachments } = req.body;
+
+  let attachments = [];
+  try { attachments = JSON.parse(existing_attachments || '[]'); } catch { attachments = []; }
+  attachments = [...attachments, ...filesToAttachments(req.files)].slice(0, 5);
+
   const result = await query(
-    `UPDATE announcements SET title_vi=$1, title_en=$2, content_vi=$3, content_en=$4, is_pinned=$5, published_at=$6
-     WHERE id=$7 RETURNING *`,
-    [title_vi, title_en, content_vi, content_en, is_pinned, published_at, req.params.id]
+    `UPDATE announcements SET title_vi=$1, title_en=$2, content_vi=$3, content_en=$4, is_pinned=$5, published_at=$6, attachments=$7
+     WHERE id=$8 RETURNING *`,
+    [title_vi, title_en || null, content_vi, content_en || null,
+     is_pinned === 'true' || is_pinned === true, published_at || new Date(),
+     JSON.stringify(attachments), req.params.id]
   );
   if (!result.rows[0]) return res.status(404).json({ error: 'Not found' });
   res.json(result.rows[0]);

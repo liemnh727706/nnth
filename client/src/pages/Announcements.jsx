@@ -68,6 +68,29 @@ export default function Announcements() {
             </div>
             <h2 className={styles.modalTitle}>{selected.title_vi}</h2>
             <div className={styles.modalContent}>{selected.content_vi}</div>
+
+            {/* File đính kèm: ảnh hiển thị trực tiếp, PDF nhúng khung xem */}
+            {selected.attachments?.length > 0 && (
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {selected.attachments.map((att, i) => (
+                  <div key={i}>
+                    {att.type === 'image' ? (
+                      <img src={att.url} alt={att.name}
+                        style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid var(--color-border)' }} />
+                    ) : (
+                      <div>
+                        <iframe src={att.url} title={att.name}
+                          style={{ width: '100%', height: 480, border: '1px solid var(--color-border)', borderRadius: 8 }} />
+                        <a href={att.url} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'inline-block', marginTop: 6, fontSize: 13, color: 'var(--color-accent)' }}>
+                          📄 Mở {att.name} trong tab mới
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             <button className={styles.closeBtn} onClick={() => setSelected(null)}>Đóng</button>
           </div>
         </div>
