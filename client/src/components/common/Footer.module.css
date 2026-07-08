@@ -1,6 +1,6 @@
 .footer {
-  background: var(--color-primary);
-  color: #CBD5E1;
+  background: var(--color-stats-bg); /* Xanh lá NLU #5AA428 */
+  color: rgba(255, 255, 255, 0.9);
   padding: var(--space-12) 0 var(--space-6);
 }
 
@@ -20,21 +20,21 @@
 
 .logoMark {
   width: 40px; height: 40px;
-  background: var(--color-accent);
+  background: #fff;
   border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-heading);
-  font-weight: 700; color: #fff; font-size: 14px;
+  font-weight: 700; color: var(--color-accent); font-size: 14px;
 }
 
 .logoMain { font-family: var(--font-heading); font-weight: 700; color: #fff; font-size: 16px; }
-.logoSub { font-size: 11px; color: #64748B; }
+.logoSub { font-size: 11px; color: rgba(255,255,255,0.75); }
 
-.desc { font-size: 14px; line-height: 1.7; color: #94A3B8; }
+.desc { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.85); }
 
 .links ul { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
 .links ul li a {
-  color: #94A3B8; text-decoration: none; font-size: 14px;
+  color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px;
   transition: color var(--transition-fast);
 }
 .links ul li a:hover { color: #fff; }
@@ -44,20 +44,20 @@
 .contact { display: flex; flex-direction: column; gap: var(--space-3); }
 
 .contactItem { display: flex; align-items: flex-start; gap: var(--space-2); font-size: 14px; line-height: 1.5; }
-.contactItem svg { flex-shrink: 0; margin-top: 2px; color: var(--color-accent); }
-.contactItem a { color: #94A3B8; text-decoration: none; }
+.contactItem svg { flex-shrink: 0; margin-top: 2px; color: #fff; }
+.contactItem a { color: rgba(255,255,255,0.85); text-decoration: none; }
 .contactItem a:hover { color: #fff; }
 
 .bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255,255,255,0.25);
   padding-top: var(--space-6);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   justify-content: space-between;
   font-size: 13px;
-  color: #64748B;
+  color: rgba(255,255,255,0.75);
 }
 
-.bottom a { color: #94A3B8; }
+.bottom a { color: rgba(255,255,255,0.85); }
 .bottom a:hover { color: #fff; }
