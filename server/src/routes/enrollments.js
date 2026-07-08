@@ -52,6 +52,53 @@ router.post('/', authenticate, async (req, res) => {
   res.status(201).json({ enrollment: result.rows[0], course });
 });
 
+// POST /api/enrollments/admin - admin thêm sinh viên vào khóa học
+// mark_paid=true: ghi nhận đã thanh toán (tiền mặt/chuyển khoản) và xác nhận luôn
+router.post('/admin', authenticate, requireAdmin, async (req, res) => {
+  const { student_id, course_id, mark_paid, payment_method = 'bank_transfer', confirm } = req.body;
+  if (!student_id || !course_id) return res.status(400).json({ error: 'Thiếu sinh viên hoặc khóa học' });
+
+  const studentResult = await query("SELECT id FROM users WHERE id = $1 AND role = 'student'", [student_id]);
+  if (!studentResult.rows[0]) return res.status(404).json({ error: 'Sinh viên không tồn tại' });
+
+  const courseResult = await query('SELECT * FROM courses WHERE id = $1 AND is_active = TRUE', [course_id]);
+  const course = courseResult.rows[0];
+  if (!course) return res.status(404).json({ error: 'Khóa học không tồn tại' });
+  if (course.current_students >= course.max_students) {
+    return res.status(409).json({ error: 'Khóa học đã đủ sĩ số' });
+  }
+
+  const existing = await query(
+    'SELECT id, status FROM enrollments WHERE student_id = $1 AND course_id = $2',
+    [student_id, course_id]
+  );
+  if (existing.rows[0]) {
+    return res.status(409).json({ error: 'Sinh viên đã có ghi danh ở khóa học này' });
+  }
+
+  const confirmed = mark_paid || confirm;
+  const enrollResult = await query(
+    `INSERT INTO enrollments (student_id, course_id, status, confirmed_at, confirmed_by)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [student_id, course_id,
+     confirmed ? 'confirmed' : 'pending_payment',
+     confirmed ? new Date() : null,
+     confirmed ? req.user.id : null]
+  );
+  const enrollment = enrollResult.rows[0];
+
+  // Ghi nhận thanh toán thủ công (admin xác thực)
+  if (mark_paid) {
+    await query(
+      `INSERT INTO payments (enrollment_id, amount, currency, method, status, paid_at, confirmed_by)
+       VALUES ($1, $2, 'VND', $3, 'completed', NOW(), $4)`,
+      [enrollment.id, course.tuition_fee, payment_method, req.user.id]
+    );
+  }
+
+  res.status(201).json(enrollment);
+});
+
 // GET /api/enrollments - admin: list all
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   const { course_id, status, page = 1, limit = 50 } = req.query;

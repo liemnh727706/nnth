@@ -8,7 +8,7 @@ import styles from './AdminPage.module.css';
 
 const METHOD_LABEL = {
   stripe: 'Stripe', vnpay: 'VNPay', momo: 'MoMo',
-  zalopay: 'ZaloPay', bank_transfer: 'Chuyển khoản',
+  zalopay: 'ZaloPay', bank_transfer: 'Chuyển khoản', cash: 'Tiền mặt',
 };
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả' },
@@ -65,11 +65,11 @@ export default function AdminPayments() {
               </tr>
             </thead>
             <tbody>
-              {data?.payments?.map(p => (
+              {(data?.data || []).map(p => (
                 <tr key={p.id}>
                   <td>
-                    <div className={styles.bold}>{p.last_name} {p.first_name}</div>
-                    <div className={styles.sub}>{p.email}</div>
+                    <div className={styles.bold}>{p.student_name}</div>
+                    <div className={styles.sub}>{p.student_email}</div>
                   </td>
                   <td>{p.course_name}</td>
                   <td className={styles.bold}>{Number(p.amount).toLocaleString('vi-VN')} đ</td>
@@ -81,11 +81,13 @@ export default function AdminPayments() {
                   </td>
                   <td className={styles.sub}>{new Date(p.created_at).toLocaleDateString('vi-VN')}</td>
                   <td>
-                    {p.status === 'pending' && p.method === 'bank_transfer' && (
+                    {p.status === 'pending' && (
                       <button
-                        className={styles.btnSuccess}
-                        onClick={() => confirmMutation.mutate(p.id)}
-                        disabled={confirmMutation.isLoading}
+                        className={styles.btnSecondary}
+                        style={{ fontSize: 12, padding: '4px 10px' }}
+                        onClick={() => window.confirm(`Xác nhận đã nhận ${Number(p.amount).toLocaleString('vi-VN')} đ từ ${p.student_name}? Ghi danh sẽ được xác nhận tự động.`) && confirmMutation.mutate(p.id)}
+                        disabled={confirmMutation.isPending}
+                        title="Xác nhận thanh toán — tự động xác nhận ghi danh"
                       >
                         <CheckCircle size={14} /> Xác nhận
                       </button>
@@ -93,7 +95,7 @@ export default function AdminPayments() {
                   </td>
                 </tr>
               ))}
-              {!data?.payments?.length && (
+              {!(data?.data || []).length && (
                 <tr><td colSpan={7} className={styles.empty}>Không có giao dịch</td></tr>
               )}
             </tbody>
