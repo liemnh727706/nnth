@@ -34,27 +34,28 @@ export const SITE = {
  *   Red:    primary=#1C0A0A, accent=#DC2626
  */
 export const COLORS = {
-  primary:       '#0F172A',   // Navy — tiêu đề lớn, header, sidebar admin
-  primaryHover:  '#1E293B',
-  accent:        '#0369A1',   // Blue — link, nút, border active
-  accentHover:   '#0284C7',
-  background:    '#F8FAFC',   // Nền trang
+  // Bảng màu theo nhận diện Nông Lâm (ttnnth.nlu.edu.vn): xanh lá NLU + xanh dương
+  primary:       '#1F4D0E',   // Xanh lá đậm — tiêu đề lớn, header, sidebar admin
+  primaryHover:  '#2B6414',
+  accent:        '#4C8B22',   // Xanh lá NLU — link, nút, border active
+  accentHover:   '#5AA428',
+  background:    '#F7FAF5',   // Nền trang (phớt xanh lá)
   surface:       '#FFFFFF',   // Nền card, modal
-  foreground:    '#020617',   // Màu chữ chính
+  foreground:    '#14210C',   // Màu chữ chính
   mutedText:     '#64748B',   // Màu chữ phụ
-  border:        '#E2E8F0',
+  border:        '#E2E8E0',
   success:       '#16A34A',
   warning:       '#D97706',
   destructive:   '#DC2626',
 
   // Utility bar (thanh trên cùng)
-  utilityBg:     '#0F172A',   // Nền thanh utility
+  utilityBg:     '#1F4D0E',   // Nền thanh utility — xanh lá đậm
 
   // Stats bar (thanh thống kê homepage)
-  statsBg:       '#0369A1',
+  statsBg:       '#5AA428',   // Xanh lá NLU
 
   // CTA banner cuối trang
-  ctaBg:         '#0F172A',
+  ctaBg:         '#1F4D0E',
 };
 
 /* ── 3. TYPOGRAPHY ──────────────────────────────────────────────────

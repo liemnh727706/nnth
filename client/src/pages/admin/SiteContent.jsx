@@ -262,7 +262,7 @@ export default function AdminSiteContent() {
           </div>
         ))}
         <button type="button" className={styles.btnSecondary}
-          onClick={() => addArrItem('PROGRAMS', { id: `new-${Date.now()}`, icon: '📘', title: '', subtitle: '', desc: '', to: '/courses', accentColor: '#0369A1', imageUrl: '' })}>
+          onClick={() => addArrItem('PROGRAMS', { id: `new-${Date.now()}`, icon: '📘', title: '', subtitle: '', desc: '', to: '/courses', accentColor: 'var(--color-accent)', imageUrl: '' })}>
           <Plus size={14} /> Thêm lĩnh vực
         </button>
       </SectionCard>

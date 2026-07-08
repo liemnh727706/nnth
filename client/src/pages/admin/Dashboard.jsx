@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className={styles.statsGrid}>
-        <StatCard icon={Users} label="Tổng sinh viên" value={stats.total_users?.toLocaleString()} color="#0369A1" to="/admin/users" />
+        <StatCard icon={Users} label="Tổng sinh viên" value={stats.total_users?.toLocaleString()} color="var(--color-accent)" to="/admin/users" />
         <StatCard icon={BookOpen} label="Khóa học" value={stats.total_courses?.toLocaleString()} color="#059669" to="/admin/courses" />
         <StatCard icon={CreditCard} label="Ghi danh" value={stats.total_enrollments?.toLocaleString()} color="#7C3AED" to="/admin/enrollments" />
         <StatCard icon={FileText} label="Chờ xác nhận" value={stats.pending_enrollments?.toLocaleString()} color="#D97706" to="/admin/enrollments?status=pending" />

@@ -43,7 +43,7 @@ export default function Dashboard() {
 
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
-          <BookOpen size={22} style={{ color: '#0369A1' }} />
+          <BookOpen size={22} style={{ color: 'var(--color-accent)' }} />
           <div>
             <div className={styles.statNum}>{activeEnrollments.length}</div>
             <div className={styles.statLabel}>Khóa học đang học</div>

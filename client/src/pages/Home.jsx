@@ -42,7 +42,7 @@ function HeroSlideshow({ images, interval = 6000 }) {
       {/* Lớp phủ tối để chữ trắng dễ đọc trên ảnh */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'linear-gradient(90deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.72) 45%, rgba(15,23,42,0.45) 100%)',
+        background: 'linear-gradient(90deg, rgba(20,45,8,0.88) 0%, rgba(20,45,8,0.72) 45%, rgba(20,45,8,0.45) 100%)',
       }} />
     </div>
   );

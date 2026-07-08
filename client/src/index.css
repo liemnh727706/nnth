@@ -5,11 +5,11 @@
    ============================================================ */
 :root {
   /* Colors */
-  --color-primary: #0F172A;
-  --color-primary-hover: #1E293B;
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
   --color-secondary: #334155;
-  --color-accent: #0369A1;
-  --color-accent-hover: #0284C7;
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
   --color-background: #F8FAFC;
   --color-surface: #FFFFFF;
   --color-foreground: #020617;
@@ -19,7 +19,7 @@
   --color-destructive: #DC2626;
   --color-success: #16A34A;
   --color-warning: #D97706;
-  --color-ring: #0369A1;
+  --color-ring: var(--color-accent);
 
   /* Typography */
   --font-heading: 'EB Garamond', Georgia, serif;
