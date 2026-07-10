@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Bell, Pin } from 'lucide-react';
 import api from '../utils/api';
@@ -16,6 +17,7 @@ const CATEGORIES = [
 export default function Announcements() {
   const [category, setCategory] = useState('');
   const [selected, setSelected] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ['announcements', category],
@@ -23,6 +25,20 @@ export default function Announcements() {
   });
 
   const announcements = rawData?.data || (Array.isArray(rawData) ? rawData : []);
+
+  // Mở chi tiết thông báo khi truy cập bằng liên kết /announcements?id=... (từ trang chủ)
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id && announcements.length) {
+      const found = announcements.find(a => String(a.id) === id);
+      if (found) setSelected(found);
+    }
+  }, [searchParams, announcements]);
+
+  const closeDetail = () => {
+    setSelected(null);
+    if (searchParams.get('id')) setSearchParams({}, { replace: true });
+  };
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -60,7 +76,7 @@ export default function Announcements() {
 
       {/* Detail modal */}
       {selected && (
-        <div className={styles.overlay} onClick={() => setSelected(null)} role="dialog" aria-modal="true">
+        <div className={styles.overlay} onClick={closeDetail} role="dialog" aria-modal="true">
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalMeta}>
               <span className={styles.category}>{CATEGORIES.find(c => c.value === selected.category)?.label}</span>
@@ -91,7 +107,7 @@ export default function Announcements() {
                 ))}
               </div>
             )}
-            <button className={styles.closeBtn} onClick={() => setSelected(null)}>Đóng</button>
+            <button className={styles.closeBtn} onClick={closeDetail}>Đóng</button>
           </div>
         </div>
       )}

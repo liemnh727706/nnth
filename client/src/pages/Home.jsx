@@ -297,7 +297,7 @@ export default function Home() {
                   <p className={styles.newsExcerpt}>
                     {a.content_vi?.slice(0, 120)}{a.content_vi?.length > 120 ? '…' : ''}
                   </p>
-                  <Link to="/announcements" className={styles.newsReadMore}>
+                  <Link to={`/announcements?id=${a.id}`} className={styles.newsReadMore}>
                     Xem chi tiết <ChevronRight size={14} aria-hidden="true" />
                   </Link>
                 </article>
