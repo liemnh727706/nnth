@@ -232,14 +232,17 @@ export const WHY_ITEMS = [
 
 /* ── 9. FOOTER ───────────────────────────────────────────────────────*/
 export const FOOTER = {
+  description: 'Trực thuộc Đại học Nông Lâm Thành phố Hồ Chí Minh, cung cấp các khóa học Ngoại ngữ và Tin học chất lượng cao.',
   address: 'Khu phố 6, Phường Linh Trung, Thành phố Thủ Đức, TP.HCM',
   phone: '(028) 3896 3158',
   email: 'nnth@hcmuaf.edu.vn',
   website: 'https://nnth.hcmuaf.edu.vn',
-  mapUrl: 'https://maps.google.com/?q=Dai+hoc+Nong+Lam+TP+HCM',
-  socialLinks: [
-    { platform: 'facebook', url: 'https://facebook.com/hcmuaf', label: 'Facebook' },
-    // { platform: 'youtube', url: 'https://youtube.com/', label: 'YouTube' },
-  ],
+  mapUrl: 'https://maps.google.com/?q=Dai+hoc+Nong+Lam+TP+HCM',  // Location (Google Maps)
+
+  // Mạng xã hội — để trống '' sẽ ẩn
+  facebook: 'https://facebook.com/hcmuaf',
+  zalo: '',
+  youtube: '',
+
   copyrightYear: new Date().getFullYear(),
 };

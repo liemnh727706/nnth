@@ -289,11 +289,20 @@ export default function AdminSiteContent() {
 
       {/* ── Footer ── */}
       <SectionCard title="📞 Chân trang — Thông tin liên hệ" onReset={() => resetSection('FOOTER')}>
+        <TextField label="Mô tả ngắn về trung tâm" textarea value={config.FOOTER.description} onChange={v => set('FOOTER', 'description', v)} />
         <TextField label="Địa chỉ" value={config.FOOTER.address} onChange={v => set('FOOTER', 'address', v)} />
+        <TextField label="Location — link Google Maps (bấm vào địa chỉ sẽ mở bản đồ)" value={config.FOOTER.mapUrl} onChange={v => set('FOOTER', 'mapUrl', v)} />
         <div className={styles.formRow}>
           <TextField label="Điện thoại" value={config.FOOTER.phone} onChange={v => set('FOOTER', 'phone', v)} />
           <TextField label="Email" value={config.FOOTER.email} onChange={v => set('FOOTER', 'email', v)} />
         </div>
+        <TextField label="Website" value={config.FOOTER.website} onChange={v => set('FOOTER', 'website', v)} />
+        <div className={styles.formRow}>
+          <TextField label="Facebook (URL)" value={config.FOOTER.facebook} onChange={v => set('FOOTER', 'facebook', v)} />
+          <TextField label="Zalo (URL)" value={config.FOOTER.zalo} onChange={v => set('FOOTER', 'zalo', v)} />
+        </div>
+        <TextField label="YouTube (URL)" value={config.FOOTER.youtube} onChange={v => set('FOOTER', 'youtube', v)} />
+        <p style={{ fontSize: 12, color: 'var(--color-muted-text)' }}>Để trống URL mạng xã hội nào thì icon đó sẽ ẩn khỏi chân trang.</p>
       </SectionCard>
 
       <div style={{ position: 'sticky', bottom: 16, textAlign: 'right' }}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, Pin } from 'lucide-react';
+import { Bell, Pin, X, Maximize2, Minimize2 } from 'lucide-react';
 import api from '../utils/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import styles from './Announcements.module.css';
@@ -17,6 +17,7 @@ const CATEGORIES = [
 export default function Announcements() {
   const [category, setCategory] = useState('');
   const [selected, setSelected] = useState(null);
+  const [maximized, setMaximized] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: rawData, isLoading } = useQuery({
@@ -37,6 +38,7 @@ export default function Announcements() {
 
   const closeDetail = () => {
     setSelected(null);
+    setMaximized(false);
     if (searchParams.get('id')) setSearchParams({}, { replace: true });
   };
 
@@ -77,7 +79,49 @@ export default function Announcements() {
       {/* Detail modal */}
       {selected && (
         <div className={styles.overlay} onClick={closeDetail} role="dialog" aria-modal="true">
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+          <div
+            className={styles.modal}
+            onClick={e => e.stopPropagation()}
+            style={maximized ? {
+              maxWidth: '96vw', width: '96vw',
+              maxHeight: '94vh', height: '94vh',
+              overflowY: 'auto', borderRadius: 8,
+            } : { maxHeight: '85vh', overflowY: 'auto' }}
+          >
+            {/* Thanh điều khiển cửa sổ: phóng to / thu nhỏ / đóng */}
+            <div style={{
+              display: 'flex', justifyContent: 'flex-end', gap: 6,
+              position: 'sticky', top: 0, zIndex: 5,
+              background: 'var(--color-surface)', paddingBottom: 6, marginBottom: 4,
+            }}>
+              <button
+                type="button"
+                onClick={() => setMaximized(m => !m)}
+                title={maximized ? 'Thu nhỏ' : 'Phóng to'}
+                aria-label={maximized ? 'Thu nhỏ cửa sổ' : 'Phóng to cửa sổ'}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 34, height: 34, borderRadius: 8, border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface)', cursor: 'pointer', color: 'var(--color-foreground)',
+                }}
+              >
+                {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button
+                type="button"
+                onClick={closeDetail}
+                title="Đóng"
+                aria-label="Đóng cửa sổ"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 34, height: 34, borderRadius: 8, border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface)', cursor: 'pointer', color: 'var(--color-destructive)',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
             <div className={styles.modalMeta}>
               <span className={styles.category}>{CATEGORIES.find(c => c.value === selected.category)?.label}</span>
               <span className={styles.date}>{new Date(selected.published_at || selected.created_at).toLocaleDateString('vi-VN')}</span>
@@ -96,7 +140,7 @@ export default function Announcements() {
                     ) : (
                       <div>
                         <iframe src={att.url} title={att.name}
-                          style={{ width: '100%', height: 480, border: '1px solid var(--color-border)', borderRadius: 8 }} />
+                          style={{ width: '100%', height: maximized ? '72vh' : 480, border: '1px solid var(--color-border)', borderRadius: 8 }} />
                         <a href={att.url} target="_blank" rel="noopener noreferrer"
                           style={{ display: 'inline-block', marginTop: 6, fontSize: 13, color: 'var(--color-accent)' }}>
                           📄 Mở {att.name} trong tab mới
